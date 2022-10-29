@@ -26,7 +26,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
-        src/BVH.cpp \
         src/BVHModel.cpp \
         src/BVHRenderWidget.cpp \
         src/RenderWindow.cpp \
@@ -34,7 +33,6 @@ SOURCES += \
         src/main.cpp
 
 HEADERS += \
-        src/BVH.h \
         src/BVHModel.h \
         src/BVHRenderWidget.h \
         Eigen/src/Cholesky/LDLT.h \

@@ -30,14 +30,7 @@ void BVHRenderWidget::paintGL()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    // draw model
-    if (model != nullptr) {
-        glColor3f(1, 1, 1);
-        glPushMatrix();
-        glTranslatef(5, 0, 0);
-        model->RenderFigure(currentTick, 0.3f);
-        glPopMatrix();
-    }
+    // draw axies
     glLineWidth(1);
     glBegin(GL_LINES);
     glColor3f(1, 0, 0);
@@ -50,6 +43,8 @@ void BVHRenderWidget::paintGL()
     glVertex3f(0, 0, 0);
     glVertex3f(0, 0, 1);
     glEnd();
+
+    // draw model
     if (bvh_model != nullptr) {
         BVHModel::boneRenderHandler boneRender = [&](Eigen::Vector4f start, Eigen::Vector4f end, unsigned int color, float radius){
             glLineWidth(3);
