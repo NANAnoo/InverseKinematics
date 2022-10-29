@@ -292,7 +292,7 @@ void  BVH::RenderFigure( int frame_no, float scale )
 	RenderFigure( joints[ 0 ], motion + frame_no * num_channel, scale );
 }
 
-
+#include <iostream>
 // 指定されたBVH骨格・姿勢を描画（クラス関数）
 void  BVH::RenderFigure( const Joint * joint, const double * data, float scale )
 {
@@ -314,12 +314,13 @@ void  BVH::RenderFigure( const Joint * joint, const double * data, float scale )
 	for ( i=0; i<joint->channels.size(); i++ )
 	{
 		Channel *  channel = joint->channels[ i ];
+       double value = data[ channel->index ];
 		if ( channel->type == X_ROTATION )
-			glRotatef( data[ channel->index ], 1.0f, 0.0f, 0.0f );
+            glRotatef( value, 1.0f, 0.0f, 0.0f );
 		else if ( channel->type == Y_ROTATION )
-			glRotatef( data[ channel->index ], 0.0f, 1.0f, 0.0f );
+            glRotatef( value, 0.0f, 1.0f, 0.0f );
 		else if ( channel->type == Z_ROTATION )
-			glRotatef( data[ channel->index ], 0.0f, 0.0f, 1.0f );
+            glRotatef( value, 0.0f, 0.0f, 1.0f );
 	}
 
 	// リンクを描画
@@ -367,7 +368,6 @@ void  BVH::RenderFigure( const Joint * joint, const double * data, float scale )
 	{
 		RenderFigure( joint->children[ i ], data, scale );
 	}
-
 	glPopMatrix();
 }
 

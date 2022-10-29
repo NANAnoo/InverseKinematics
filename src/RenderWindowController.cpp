@@ -8,5 +8,6 @@ void RenderWindowController::loopAnimation()
     connect(timer, &QTimer::timeout, this, [=](){
         window->resetLayout();
     });
-    timer->start(30);
+    timer->start(8);
+    // window->resetLayout();
 }
