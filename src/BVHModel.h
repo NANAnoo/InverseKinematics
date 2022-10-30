@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <tuple>
+#include <fstream>
 #include <functional>
 #include "Eigen/Dense"
 
@@ -24,8 +24,8 @@ public:
 #define FLOAT_GREEN(color) (static_cast<float>((color & GREEN_COLOR) >> 16) / 255.f)
 #define FLOAT_BLUE(color) (static_cast<float>((color & BLUE_COLOR) >> 8) / 255.f)
 
-    typedef std::function<void(Eigen::Vector4f &bottle, Eigen::Vector4f &top, unsigned int color, float radious)> boneRenderHandler;
-    typedef std::function<void(Eigen::Vector4f &center, unsigned int color, float radious)> jointRenderHandler;
+    typedef std::function<void(Eigen::Vector4f &bottle, Eigen::Vector4f &top, unsigned int color, double radious)> boneRenderHandler;
+    typedef std::function<void(Eigen::Vector4f &center, unsigned int color, double radious)> jointRenderHandler;
     // type define
     enum  ChannelEnum
     {
@@ -38,8 +38,8 @@ public:
         // is end joint?
         bool                        has_site;
         // offset and site data
-        float                       offset[3];
-        float                       site[3];
+        double                       offset[3];
+        double                       site[3];
         // joint name
         std::string                 name;
         // parent joint
@@ -62,12 +62,12 @@ public:
     ~BVHModel();
 
     // get position of a joint
-    Eigen::Vector4f jointPositionAt(unsigned int frame_ID, const std::string joint_name, float scale);
+    Eigen::Vector4f jointPositionAt(unsigned int frame_ID, const std::string joint_name, double scale);
     // get the joint from name
     BVHJoint *getJointFromName(const std::string joint_name) {return joint_map[joint_name];}
 
     // render skeleton
-    void renderModelWith(boneRenderHandler &boneRender, jointRenderHandler &jointRender, unsigned int frame_ID, float scale);
+    void renderModelWith(boneRenderHandler &boneRender, jointRenderHandler &jointRender, unsigned int frame_ID, double scale);
 
     // write to file
     void writeToFile(const std::string file_name);
@@ -85,23 +85,25 @@ private:
     BVHJoint *skeleton;
     std::map<std::string, BVHJoint *> joint_map;
     // frame info
-    std::vector<std::vector<float> *> *motion_datas;
+    std::vector<std::vector<double> *> *motion_datas;
     // render all joints
     void renderJoint(BVHJoint *joint,
                      boneRenderHandler &boneRender,
                      jointRenderHandler &jointRender,
                      Eigen::MatrixXf current_transition,
-                     std::vector<float>::iterator &it,
-                     float scale);
+                     std::vector<double>::iterator &it,
+                     double scale);
     // valid status;
     bool is_valid;
     // private functions:
     // get motion data at frame
-    std::vector<float> *motionDataAt(unsigned int frame_ID);
-    std::vector<float> *defaultMotion;
+    std::vector<double> *motionDataAt(unsigned int frame_ID);
+    std::vector<double> *defaultMotion;
     // rotation util
-    Eigen::Matrix4f getRotationMatrix(ChannelEnum type, float alpha);
-    Eigen::Matrix4f getTraslationMatrix(float x, float y, float z);
+    Eigen::Matrix4f getRotationMatrix(ChannelEnum type, double alpha);
+    Eigen::Matrix4f getTraslationMatrix(double x, double y, double z);
+    // write joint to file
+    void writeJointToFile(BVHJoint *joint, std::ofstream &file, unsigned int depth);
 };
 
 

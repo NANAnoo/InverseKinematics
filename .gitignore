@@ -1,3 +1,4 @@
 build/
+output/
 .vscode
 InverseKinematics.pro.user
