@@ -7,13 +7,14 @@
 #include "BVHRenderWidget.h"
 #include "FilePickerWidget.h"
 #include "PlayBarWidget.h"
+#include "BVHJointViewer.h"
 
 class RenderWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    RenderWindow(QWidget *parent = 0);
+    RenderWindow(QWidget *parent = nullptr);
     ~RenderWindow();
 
     // set layout
@@ -23,6 +24,7 @@ public:
     BVHRenderWidget *bvh_render;
     FilePickerWidget *file_picker;
     PlayBarWidget *play_bar;
+    BVHJointViewer *joint_viewer;
 };
 
 #endif // MAINWINDOW_H

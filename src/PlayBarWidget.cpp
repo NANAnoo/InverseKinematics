@@ -89,6 +89,7 @@ void PlayBarWidget::loadView()
         play_stop_begin->setEnabled(false);
         play_reset->setEnabled(false);
         bar->setMaximum(1);
+        updateFrame(1);
     }
 }
 
@@ -123,6 +124,13 @@ void PlayBarWidget::updateFrame(unsigned int frame_ID)
     bar->setValue(static_cast<int>(current_frame));
 }
 
+void PlayBarWidget::reloadCurrentFrameIfStopped()
+{
+    if (!is_playing && is_valid) {
+        emit frameStopAt(current_frame);
+    }
+}
+
 // slots
 void PlayBarWidget::startStopPlay()
 {
@@ -142,7 +150,7 @@ void PlayBarWidget::startStopPlay()
         play_stop_begin->setText("||");
         if (timer != nullptr)
         {
-            timer->start(frame_duration);
+            timer->start(static_cast<int>(frame_duration * 1000));
         }
         emit postCurrentFrame(current_frame);
     }

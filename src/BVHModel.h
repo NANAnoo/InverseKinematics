@@ -33,10 +33,10 @@ public:
         std::vector< BVHJoint * >   children;
         // how data applied
         std::vector<ChannelEnum>    channels;
-        // color
-        unsigned int                RGBAColor;
         // channel index offset
         unsigned int                channel_index_offset;
+        // render size
+        BVH::RenderType render_type;
     };
 
     // build model with file
@@ -57,6 +57,9 @@ public:
     // write to file
     bool writeToFile(const std::string file_name);
 
+    // get meta info list
+    std::vector<BVH::BVHMetaNode> getMetaList();
+
     // motion information
     unsigned int allFrameCount() {return motion_datas->size();}
     unsigned int channel_num;
@@ -65,9 +68,11 @@ public:
     // valid information
     bool isValid(){return is_valid;}
 
-private:
     // root Joint
     BVHJoint *skeleton;
+
+private:
+
     std::map<std::string, BVHJoint *> joint_map;
     // frame info
     std::vector<std::vector<double> *> *motion_datas;
@@ -89,6 +94,8 @@ private:
     Eigen::Matrix4f getTraslationMatrix(double x, double y, double z);
     // write joint to file
     void writeJointToFile(BVHJoint *joint, std::ofstream &file, unsigned int depth);
+
+    void getMetaInfoFrom(BVHJoint *node, std::vector<BVH::BVHMetaNode> &list, unsigned int depth);
 };
 
 

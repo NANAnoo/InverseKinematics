@@ -51,9 +51,27 @@ void BVHRenderWidget::paintGL()
 
 BVH::boneRenderHandler BVHRenderWidget::getBoneRender()
 {
-    return [&](Eigen::Vector4f start, Eigen::Vector4f end, unsigned int color, float radius)
+    return [&](Eigen::Vector4f start, Eigen::Vector4f end, BVH::RenderType type, float radius)
     {
-        glLineWidth(3);
+        unsigned int color = WHITE_COLOR;
+        float width = 20 * radius;
+        switch (type) {
+            case BVH::DefaultType:
+                color = CYAN_COLOR;
+                width = 10 * radius;
+                break;
+            case BVH::SelectedType:
+                color = GREEN_COLOR;
+                break;
+            case BVH::LockedType:
+                color = YELLOW_COLOR;
+                width = 10 * radius;
+                break;
+            case BVH::LockedType | BVH::SelectedType:
+                color = PURPLE_COLOR;
+                break;
+        }
+        glLineWidth(width);
         glColor3f(FLOAT_RED(color), FLOAT_GREEN(color), FLOAT_BLUE(color));
         glBegin(GL_LINES);
         glVertex3f(start.x(), start.y(), start.z());
@@ -64,9 +82,29 @@ BVH::boneRenderHandler BVHRenderWidget::getBoneRender()
 
 BVH::jointRenderHandler BVHRenderWidget::getJointRender()
 {
-    return [&](Eigen::Vector4f centor, unsigned int color, float radius)
+    return [&](Eigen::Vector4f centor, BVH::RenderType type, float radius)
     {
-        glPointSize(10);
+        float width = 10 * radius;
+        unsigned int color = WHITE_COLOR;
+        switch (type) {
+            case BVH::DefaultType:
+                color = BLUE_COLOR;
+                width = 40 * radius;
+                break;
+            case BVH::SelectedType:
+                color = GREEN_COLOR;
+                width = 50 * radius;
+                break;
+            case BVH::LockedType:
+                color = YELLOW_COLOR;
+                width = 50 * radius;
+                break;
+            case BVH::LockedType | BVH::SelectedType:
+                color = PURPLE_COLOR;
+                width = 50 * radius;
+                break;
+        }
+        glPointSize(width);
         glColor3f(FLOAT_RED(color), FLOAT_GREEN(color), FLOAT_BLUE(color));
         glBegin(GL_POINTS);
         glVertex3f(centor.x(), centor.y(), centor.z());

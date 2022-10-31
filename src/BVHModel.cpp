@@ -69,16 +69,11 @@ BVHModel::BVHModel(const std::string filename)
             new_joint->site[1] = 0.0;
             new_joint->site[2] = 0.0;
             new_joint->channel_index_offset = channel_num;
+            new_joint->render_type = BVH::DefaultType;
             if (joint)
-            {
-                new_joint->RGBAColor = GREEN_COLOR;
                 joint->children.push_back(new_joint);
-            }
             else
-            {
-                new_joint->RGBAColor = RED_COLOR;
                 skeleton = new_joint;
-            }
             // parse name
             token = strtok(nullptr, "");
             while (*token == ' ')
@@ -102,11 +97,11 @@ BVHModel::BVHModel(const std::string filename)
         {
             // parse the value of offset or site
             token = strtok(nullptr, separater);
-            x = token ? static_cast<double>(atof(token)) : 0.0f;
+            x = token ? static_cast<double>(atof(token)) : 0.0;
             token = strtok(nullptr, separater);
-            y = token ? static_cast<double>(atof(token)) : 0.0f;
+            y = token ? static_cast<double>(atof(token)) : 0.0;
             token = strtok(nullptr, separater);
-            z = token ? static_cast<double>(atof(token)) : 0.0f;
+            z = token ? static_cast<double>(atof(token)) : 0.0;
 
             // set site info
             if (is_site)
@@ -318,21 +313,21 @@ void BVHModel::renderJoint(BVHJoint *joint,
     Eigen::Vector4f joint_center(0, 0, 0, 1);
     joint_center = transition * joint_center;
     // render joint
-    jointRender(joint_center, joint->RGBAColor, .2f * scale);
+    jointRender(joint_center, joint->render_type, scale);
     unsigned int size = joint->children.size();
     if (joint->children.size() == 0)
     {
         // render site bone;
         Eigen::Vector4f site_end(joint->site[0] * scale, joint->site[1] * scale, joint->site[2] * scale, 1);
         site_end = transition * site_end;
-        boneRender(joint_center, site_end, CYAN_COLOR, .1f * scale);
+        boneRender(joint_center, site_end, joint->render_type, scale);
     }
     else if ((joint->children.size() == 1))
     {
         BVHJoint *child = joint->children[0];
         Eigen::Vector4f child_center(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
         child_center = transition * child_center;
-        boneRender(joint_center, child_center, CYAN_COLOR, .1f * scale);
+        boneRender(joint_center, child_center, child->render_type, scale);
         renderJoint(child, boneRender, jointRender, transition, it, scale);
     }
     else
@@ -347,12 +342,12 @@ void BVHModel::renderJoint(BVHJoint *joint,
         // get center of all joints
         child_center = child_center / (size + 1);
         child_center = transition * child_center;
-        boneRender(joint_center, child_center, CYAN_COLOR, .1f * scale);
+        boneRender(joint_center, child_center, joint->render_type, scale);
         for (BVHJoint *child : joint->children)
         {
             Eigen::Vector4f child_joint_center(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
             child_joint_center = transition * child_joint_center;
-            boneRender(child_center, child_joint_center, CYAN_COLOR, .1f * scale);
+            boneRender(child_center, child_joint_center, child->render_type, scale);
             renderJoint(child, boneRender, jointRender, transition, it, scale);
         }
     }
@@ -424,7 +419,6 @@ bool BVHModel::writeToFile(const std::string file_name)
 
 void BVHModel::writeJointToFile(BVHJoint *joint, ofstream &file, unsigned int depth)
 {
-    bool isRoot = joint->parent == nullptr;
     // write head
     if (joint->parent == nullptr)
     {
@@ -503,8 +497,25 @@ std::vector<double> *BVHModel::motionDataAt(unsigned int frame_ID)
     if (motion_datas != nullptr && motion_datas->size() > frame_ID)
         return (*motion_datas)[frame_ID];
     if (defaultMotion == nullptr)
-        defaultMotion = new vector<double>(channel_num, 0.f);
+        defaultMotion = new vector<double>(channel_num, 0);
     return defaultMotion;
+}
+
+std::vector<BVH::BVHMetaNode> BVHModel::getMetaList()
+{
+    vector<BVH::BVHMetaNode> res;
+    getMetaInfoFrom(skeleton, res, 0);
+    return res;
+}
+
+void BVHModel::getMetaInfoFrom(BVHJoint *node, std::vector<BVH::BVHMetaNode> &list, unsigned int depth)
+{
+    if (node) {
+        list.push_back(BVH::BVHMetaNode({node->name, node->parent == nullptr ? "" : node->parent->name, depth}));
+        for (BVHJoint *child : node->children) {
+            getMetaInfoFrom(child, list, depth + 1);
+        }
+    }
 }
 
 // dealloc

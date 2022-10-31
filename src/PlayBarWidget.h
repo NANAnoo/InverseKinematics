@@ -46,6 +46,8 @@ public:
     void loadView();
     // set validate
     void setValid(bool valid){ is_valid = valid; }
+    // reload current frame
+    void reloadCurrentFrameIfStopped();
 
 signals:
     // current play duation

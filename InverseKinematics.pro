@@ -26,6 +26,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+    src/BVHJointViewer.cpp \
         src/FilePickerWidget.cpp \
         src/PlayBarWidget.cpp \
         src/BVHModel.cpp \
@@ -35,7 +36,9 @@ SOURCES += \
         src/main.cpp \
 
 HEADERS += \
+        src/BVHJointViewer.h \
         src/BVHModel.h \
+        src/BVHModelMacros.h \
         src/BVHRenderWidget.h \
         Eigen/src/Cholesky/LDLT.h \
         Eigen/src/Cholesky/LLT.h \
