@@ -16,6 +16,7 @@ private:
     QPushButton *play_next;
     QPushButton *play_stop_begin;
     QPushButton *play_reset;
+    // TODO impl a editable bar
     QProgressBar *bar;
     QLabel *progress_label;
 

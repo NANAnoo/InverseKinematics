@@ -6,23 +6,27 @@ PlayBarWidget::PlayBarWidget(QWidget *parent)
     : QWidget(parent)
 {
     // set layout
-    setGeometry(300, 710, 600, 80);
+    int width = parent->geometry().width();
+    int height = parent->geometry().height();
+    setGeometry(width / 12 * 3, height / 8 * 7 + height / 80, width / 2, height / 10);
+    width = geometry().width();
+    height = geometry().height() / 2;
 
     /* inner widgets initial*/
-    play_preview = new QPushButton("⏪", this);
-    play_next = new QPushButton("⏩", this);
-    play_stop_begin = new QPushButton("▶️", this);
-    play_reset = new QPushButton("⏹", this);
+    play_preview = new QPushButton("<<", this);
+    play_next = new QPushButton(">>", this);
+    play_stop_begin = new QPushButton("[>", this);
+    play_reset = new QPushButton("[o]", this);
     bar = new QProgressBar(this);
     progress_label = new QLabel(this);
 
     // layout
-    bar->setGeometry(5, 5, 590, 30);
-    play_preview->setGeometry(5, 40, 40, 40);
-    play_stop_begin->setGeometry(50, 40, 40, 40);
-    play_next->setGeometry(500, 40, 40, 40);
-    play_reset->setGeometry(550, 40, 40, 40);
-    progress_label->setGeometry(270, 40, 60 ,40);
+    bar->setGeometry(height / 10, height / 10, width - height / 5, height / 5 * 3);
+    play_preview->setGeometry(height / 5, height - height / 10, height / 5 * 4, height / 5 * 4);
+    play_stop_begin->setGeometry(height / 5 * 6, height - height / 10, height / 5 * 4, height / 5 * 4);
+    play_next->setGeometry(width / 6 * 5 + height / 5, height - height / 10, height / 5 * 4, height / 5 * 4);
+    play_reset->setGeometry(width / 6 * 5 + height / 5 * 6, height - height / 10, height / 5 * 4, height / 5 * 4);
+    progress_label->setGeometry(width / 2 - height / 5 * 6, height - height / 10, height / 5 * 12 , height / 5 * 4);
 
     // event bindings
     QObject::connect(play_preview, &QPushButton::released, this, &PlayBarWidget::previousFrame);
@@ -65,15 +69,16 @@ PlayBarWidget::PlayBarWidget(QWidget *parent)
 void PlayBarWidget::loadView()
 {
     is_playing = false;
-    play_stop_begin->setText("▶️");
+    play_stop_begin->setText("[>");
+    bar->setMinimum(1);
+    bar->setValue(1);
     if (is_valid)
     {
         play_preview->setEnabled(true);
         play_next->setEnabled(true);
         play_stop_begin->setEnabled(true);
         play_reset->setEnabled(true);
-        bar->setMaximum(max_frame);
-        bar->setMinimum(1);
+        bar->setMaximum(static_cast<int>(max_frame));
         // playing is stopped at first
         updateFrame(1);
     }
@@ -84,7 +89,6 @@ void PlayBarWidget::loadView()
         play_stop_begin->setEnabled(false);
         play_reset->setEnabled(false);
         bar->setMaximum(1);
-        bar->setValue(1);
     }
 }
 
@@ -116,6 +120,7 @@ void PlayBarWidget::updateFrame(unsigned int frame_ID)
     char progress[20];
     std::snprintf(progress, 30, "%d : %d", current_frame, max_frame);
     progress_label->setText(progress);
+    bar->setValue(static_cast<int>(current_frame));
 }
 
 // slots
@@ -124,7 +129,7 @@ void PlayBarWidget::startStopPlay()
     if (is_playing)
     {
         // stop
-        play_stop_begin->setText("▶️");
+        play_stop_begin->setText("[>");
         if (timer != nullptr)
         {
             timer->stop();
@@ -134,7 +139,7 @@ void PlayBarWidget::startStopPlay()
     else
     {
         // start
-        play_stop_begin->setText("⏸");
+        play_stop_begin->setText("||");
         if (timer != nullptr)
         {
             timer->start(frame_duration);
@@ -149,7 +154,7 @@ void PlayBarWidget::resetPlay()
     if (is_playing)
     {
         // stop first
-        play_stop_begin->setText("▶️");
+        play_stop_begin->setText("[>");
         if (timer != nullptr)
         {
             timer->stop();

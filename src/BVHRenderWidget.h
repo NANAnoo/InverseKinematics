@@ -7,7 +7,10 @@
 class BVHRenderWidget : public QOpenGLWidget
 {
 public:
-    BVHRenderWidget(QWidget *parent) : QOpenGLWidget(parent) { setGeometry(300, 100, 600, 600); }
+    BVHRenderWidget(QWidget *parent) : QOpenGLWidget(parent){
+        QRect size = parent->geometry();
+        setGeometry(size.width() / 4, size.height() / 8, size.width() / 2, size.width() / 2);
+    }
 
     void repaintWithRenderCallback(std::function<void(void)> callback) {storedRenderCallback = callback; update();}
 

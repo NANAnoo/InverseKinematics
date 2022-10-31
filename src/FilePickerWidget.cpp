@@ -5,7 +5,11 @@
 FilePickerWidget::FilePickerWidget(QWidget *parent)
     :QWidget(parent)
 {
-    setGeometry(300, 25, 600, 50);
+    int width = parent->width();
+    int height = parent->height();
+    setGeometry(width / 4, height / 32 , width / 2 , height / 16);
+    width = this->width();
+    height = this->height();
     selectButton = new QPushButton("...", this);
     saveButton = new QPushButton("save", this);
     pathViewer = new QLineEdit("select a file ...", this);
@@ -14,9 +18,9 @@ FilePickerWidget::FilePickerWidget(QWidget *parent)
     pathViewer->setFocusPolicy(Qt::NoFocus);
 
     // set layout
-    pathViewer->setGeometry(5, 5, 500, 40);
-    selectButton->setGeometry(515, 10, 50, 30);
-    saveButton->setGeometry(545, 10, 50, 30);
+    pathViewer->setGeometry(height / 10, height / 10, width / 6 * 5, height / 5 * 4);
+    selectButton->setGeometry(width / 6 * 5 + height / 2 , height / 5, height / 5 * 2, height / 5 * 3);
+    saveButton->setGeometry(width / 6 * 5 + height , height / 5, height, height / 5 * 3);
     currentMode = NONE_SELECTION_MODE;
     
     // set bindings:
