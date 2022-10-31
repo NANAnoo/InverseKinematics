@@ -2,23 +2,23 @@
 #define BVHRENDERWIDGET_H
 
 #include <QOpenGLWidget>
-#include "BVHModel.h"
-
+#include "BVHModelMacros.h"
 
 class BVHRenderWidget : public QOpenGLWidget
 {
 public:
-    BVHModel *bvh_model;
-    // init with model
-    BVHRenderWidget(QWidget *parent, BVHModel *bvh):QOpenGLWidget(parent), bvh_model(bvh), currentTick(0), totalTick(bvh_model->allFrameCount()){}
+    BVHRenderWidget(QWidget *parent) : QOpenGLWidget(parent) { setGeometry(300, 100, 600, 600); }
 
-    void nextFrame();
+    void repaintWithRenderCallback(std::function<void(void)> callback) {storedRenderCallback = callback; update();}
+
+    BVH::boneRenderHandler getBoneRender();
+    BVH::jointRenderHandler getJointRender();
 
     // dealloc
     ~BVHRenderWidget();
+
 protected:
-    unsigned int currentTick;
-    unsigned int totalTick;
+    std::function<void(void)> storedRenderCallback;
     void initializeGL();
     void resizeGL(int w, int h);
     void paintGL();

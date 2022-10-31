@@ -5,6 +5,8 @@
 #include <QGridLayout>
 
 #include "BVHRenderWidget.h"
+#include "FilePickerWidget.h"
+#include "PlayBarWidget.h"
 
 class RenderWindow : public QMainWindow
 {
@@ -15,15 +17,12 @@ public:
     ~RenderWindow();
 
     // set layout
-    void resetLayout();
-private:
-    // layout
-    QGridLayout *window_layout;
+    void loadContent();
 
     // custome widgets
     BVHRenderWidget *bvh_render;
-
-
+    FilePickerWidget *file_picker;
+    PlayBarWidget *play_bar;
 };
 
 #endif // MAINWINDOW_H

@@ -2,7 +2,6 @@
 
 BVHRenderWidget::~BVHRenderWidget()
 {
-
 }
 
 void BVHRenderWidget::initializeGL()
@@ -10,7 +9,6 @@ void BVHRenderWidget::initializeGL()
     glEnable(GL_DEPTH_TEST);
     glClearColor(0, 0, 0, 0);
 }
-
 
 void BVHRenderWidget::resizeGL(int w, int h)
 {
@@ -44,31 +42,34 @@ void BVHRenderWidget::paintGL()
     glVertex3f(0, 0, 1);
     glEnd();
 
-    // draw model
-    if (bvh_model != nullptr) {
-        BVHModel::boneRenderHandler boneRender = [&](Eigen::Vector4f start, Eigen::Vector4f end, unsigned int color, float radius){
-            glLineWidth(3);
-            glColor3f(FLOAT_RED(color), FLOAT_GREEN(color), FLOAT_BLUE(color));
-            glBegin(GL_LINES);
-            glVertex3f(start.x(), start.y(), start.z());
-            glVertex3f(end.x(), end.y(), end.z());
-            glEnd();
-        };
-        BVHModel::jointRenderHandler jointRender = [&](Eigen::Vector4f centor, unsigned int color, float radius){
-            glPointSize(10);
-            glColor3f(FLOAT_RED(color), FLOAT_GREEN(color), FLOAT_BLUE(color));
-            glBegin(GL_POINTS);
-            glVertex3f(centor.x(), centor.y(), centor.z());
-            glEnd();
-
-        };
-        bvh_model->renderModelWith(boneRender, jointRender, currentTick, 0.3f);
+    // draw other models
+    if (storedRenderCallback != nullptr) {
+        storedRenderCallback();
     }
+    
 }
 
-void BVHRenderWidget::nextFrame()
+BVH::boneRenderHandler BVHRenderWidget::getBoneRender()
 {
-    update();
-    currentTick  = (currentTick + 1) %  totalTick;
+    return [&](Eigen::Vector4f start, Eigen::Vector4f end, unsigned int color, float radius)
+    {
+        glLineWidth(3);
+        glColor3f(FLOAT_RED(color), FLOAT_GREEN(color), FLOAT_BLUE(color));
+        glBegin(GL_LINES);
+        glVertex3f(start.x(), start.y(), start.z());
+        glVertex3f(end.x(), end.y(), end.z());
+        glEnd();
+    };
 }
 
+BVH::jointRenderHandler BVHRenderWidget::getJointRender()
+{
+    return [&](Eigen::Vector4f centor, unsigned int color, float radius)
+    {
+        glPointSize(10);
+        glColor3f(FLOAT_RED(color), FLOAT_GREEN(color), FLOAT_BLUE(color));
+        glBegin(GL_POINTS);
+        glVertex3f(centor.x(), centor.y(), centor.z());
+        glEnd();
+    };
+}

@@ -258,7 +258,7 @@ Eigen::Vector4f BVHModel::jointPositionAt(unsigned int frame_ID, const std::stri
 }
 
 // render skeleton
-void BVHModel::renderModelWith(boneRenderHandler &boneRender, jointRenderHandler &jointRender, unsigned int frame_ID, double scale)
+void BVHModel::renderModelWith(BVH::boneRenderHandler boneRender, BVH::jointRenderHandler jointRender, unsigned int frame_ID, double scale)
 {
     if (skeleton != nullptr && isValid() && channel_num > 0)
     {
@@ -270,8 +270,8 @@ void BVHModel::renderModelWith(boneRenderHandler &boneRender, jointRenderHandler
 
 // render all joints
 void BVHModel::renderJoint(BVHJoint *joint,
-                           boneRenderHandler &boneRender,
-                           jointRenderHandler &jointRender,
+                           BVH::boneRenderHandler &boneRender,
+                           BVH::jointRenderHandler &jointRender,
                            Eigen::MatrixXf current_transition,
                            std::vector<double>::iterator &it,
                            double scale)
@@ -394,13 +394,13 @@ Eigen::Matrix4f BVHModel::getTraslationMatrix(double x, double y, double z)
 }
 
 // write to file
-void BVHModel::writeToFile(const std::string file_name)
+bool BVHModel::writeToFile(const std::string file_name)
 {
     cout << "save file at:" << file_name << endl;
     ofstream file;
     file.open(file_name, ios::out);
     if (!file.is_open())
-        return;
+        return false;
     file.setf(ios::showpoint);
     file << fixed;
     file.precision(6);
@@ -419,6 +419,7 @@ void BVHModel::writeToFile(const std::string file_name)
         file << endl;
     }
     file.close();
+    return true;
 }
 
 void BVHModel::writeJointToFile(BVHJoint *joint, ofstream &file, unsigned int depth)

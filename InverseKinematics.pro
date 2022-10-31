@@ -26,11 +26,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+        src/FilePickerWidget.cpp \
+        src/PlayBarWidget.cpp \
         src/BVHModel.cpp \
         src/BVHRenderWidget.cpp \
         src/RenderWindow.cpp \
         src/RenderWindowController.cpp \
-        src/main.cpp
+        src/main.cpp \
 
 HEADERS += \
         src/BVHModel.h \
@@ -343,7 +345,10 @@ HEADERS += \
         Eigen/src/plugins/MatrixCwiseUnaryOps.h \
         Eigen/src/plugins/ReshapedMethods.h \
         src/RenderWindow.h \
-        src/RenderWindowController.h
+        src/RenderWindowController.h \
+        src/FilePickerWidget.h \
+        src/PlayBarWidget.h 
+
 win32 {
     LIBS += -lopengl32
     LIBS += -lglu32

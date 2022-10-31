@@ -9,7 +9,6 @@ int main(int argc, char *argv[])
     RenderWindowController controller(&w);
     w.setFixedSize(1200, 800);
     w.show();
-    controller.loopAnimation();
 
     return a.exec();
 }

@@ -6,19 +6,11 @@ RenderWindow::RenderWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     // TEST: test file;
-    BVHModel *model = new BVHModel("/Users/nanorth/Develop/AssignmentsInLeedsHPGS1/AnimationAndSimulation/InverseKinematics/models/05_06.bvh");
-    model->writeToFile("/Users/nanorth/Develop/AssignmentsInLeedsHPGS1/AnimationAndSimulation/InverseKinematics/output/test.bvh");
-    // custom widgets init
-    bvh_render = new BVHRenderWidget(this, model);
-    bvh_render->resize(600, 600);
+    bvh_render = new BVHRenderWidget(this);
+    file_picker = new FilePickerWidget(this);
+    play_bar = new PlayBarWidget(this);
 
-    // layout
-    window_layout = new QGridLayout(this);
-
-    // set widgets
-    window_layout->addWidget(bvh_render);
-
-    resetLayout();
+    loadContent();
 }
 
 RenderWindow::~RenderWindow()
@@ -27,7 +19,8 @@ RenderWindow::~RenderWindow()
 }
 
 
-void RenderWindow::resetLayout()
+void RenderWindow::loadContent()
 {
-    bvh_render->nextFrame();
+    bvh_render->update();
+    file_picker->loadView();
 }
