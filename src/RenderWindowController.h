@@ -8,6 +8,14 @@
 class RenderWindowController : public QObject
 {
     Q_OBJECT
+
+    enum CurrentMode {
+        NormalMode,
+        JointEditingMode,
+        MotionEditingMode,
+        MotionPreviewMode
+    };
+
 private:
     RenderWindow *window;
     BVHModel *current_model;
@@ -32,6 +40,17 @@ public slots:
     // From joint viwer
     void selectedNode(std::string node_name);
     void lockedNode(std::string node_name, bool locked);
+
+    // From motion creator
+    void startMotion(double interval, double fps);
+    void cancelMotion();
+
+    // From joint editor
+    void receivedMotionData(BVHJointEidtor::EditedValueType type, int x, int y, int z, int w);
+    void initialMotion();
+    void rollbackMotion();
+    void insertMotion();
+    double getMotionValueAtIndex(unsigned int index);
 };
 
 #endif // RENDERWINDOWCONTROLLER_H

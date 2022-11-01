@@ -2,42 +2,14 @@
 #define BVHMODEL_H
 
 #include <map>
-#include <string>
-#include <vector>
 #include <fstream>
 #include "BVHModelMacros.h"
+
+using namespace BVH;
 
 class BVHModel
 {
 public:
-
-    // type define
-    enum  ChannelEnum
-    {
-        X_ROTATION, Y_ROTATION, Z_ROTATION,
-        X_POSITION, Y_POSITION, Z_POSITION
-    };
-
-    struct BVHJoint
-    {
-        // is end joint?
-        bool                        has_site;
-        // offset and site data
-        double                       offset[3];
-        double                       site[3];
-        // joint name
-        std::string                 name;
-        // parent joint
-        BVHJoint *                  parent;
-        // children joints
-        std::vector< BVHJoint * >   children;
-        // how data applied
-        std::vector<ChannelEnum>    channels;
-        // channel index offset
-        unsigned int                channel_index_offset;
-        // render size
-        BVH::RenderType render_type;
-    };
 
     // build model with file
     BVHModel(const std::string filename);

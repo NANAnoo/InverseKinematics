@@ -8,6 +8,8 @@
 #include "FilePickerWidget.h"
 #include "PlayBarWidget.h"
 #include "BVHJointViewer.h"
+#include "BVHJointEidtor.h"
+#include "BVHMotionCreater.h"
 
 class RenderWindow : public QMainWindow
 {
@@ -25,6 +27,8 @@ public:
     FilePickerWidget *file_picker;
     PlayBarWidget *play_bar;
     BVHJointViewer *joint_viewer;
+    BVHJointEidtor *joint_editor;
+    BVHMotionCreater *motion_creator;
 };
 
 #endif // MAINWINDOW_H

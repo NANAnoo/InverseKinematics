@@ -2,6 +2,7 @@
 #define BVHMODELMACROS_H
 
 #include <functional>
+#include <vector>
 #include "Eigen/Dense"
 
 namespace BVH
@@ -29,9 +30,45 @@ struct BVHMetaNode
     std::string parent;
     unsigned int level;
 };
+struct BVHMotionInfo
+{
+    std::string joint_name;
+    Eigen::Vector3d *begin;
+    Eigen::Vector3d *end;
+    Eigen::Vector3d *begin_control;
+    Eigen::Vector3d *end_control;
+};
+
 typedef std::function<void(Eigen::Vector4f &bottle, Eigen::Vector4f &top, RenderType type, double radious)> boneRenderHandler;
 typedef std::function<void(Eigen::Vector4f &center, RenderType type, double radious)> jointRenderHandler;
 
+// type define
+enum  ChannelEnum
+{
+    X_ROTATION, Y_ROTATION, Z_ROTATION,
+    X_POSITION, Y_POSITION, Z_POSITION
+};
+
+struct BVHJoint
+{
+    // is end joint?
+    bool                        has_site;
+    // offset and site data
+    double                       offset[3];
+    double                       site[3];
+    // joint name
+    std::string                 name;
+    // parent joint
+    BVHJoint *                  parent;
+    // children joints
+    std::vector< BVHJoint * >   children;
+    // how data applied
+    std::vector<ChannelEnum>    channels;
+    // channel index offset
+    unsigned int                channel_index_offset;
+    // render size
+    BVH::RenderType render_type;
+};
 
 };
 

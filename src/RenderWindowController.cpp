@@ -74,8 +74,8 @@ void RenderWindowController::renderFrameAt(unsigned int frame_ID)
             if (model != nullptr && model->isValid())
             {
                 model->renderModelWith(window->bvh_render->getBoneRender(),
-                                       window->bvh_render->getJointRender(), 
-                                       frame_ID - 1, 
+                                       window->bvh_render->getJointRender(),
+                                       frame_ID - 1,
                                        0.3);
             }
         });
@@ -103,10 +103,10 @@ void RenderWindowController::stopFrameAt(unsigned int frame_ID)
 void RenderWindowController::selectedNode(std::string node_name)
 {
     BVHModel *model = isEditing ? editing_model : current_model;
-    BVHModel::BVHJoint *joint = model->getJointFromName(node_name);
+    BVH::BVHJoint *joint = model->getJointFromName(node_name);
     // update color
     if (joint != nullptr) {
-        BVHModel::BVHJoint *previous_joint = model->getJointFromName(previous_selected_joint);
+        BVH::BVHJoint *previous_joint = model->getJointFromName(previous_selected_joint);
         if (previous_joint != nullptr) {
             previous_joint->render_type = static_cast<BVH::RenderType>(previous_joint->render_type - BVH::SelectedType);
         }
@@ -119,7 +119,7 @@ void RenderWindowController::selectedNode(std::string node_name)
 void RenderWindowController::lockedNode(std::string node_name, bool locked)
 {
     BVHModel *model = isEditing ? editing_model : current_model;
-    BVHModel::BVHJoint *joint = model->getJointFromName(node_name);
+    BVH::BVHJoint *joint = model->getJointFromName(node_name);
     // update color
     if (joint != nullptr) {
         if (locked) {
@@ -129,4 +129,36 @@ void RenderWindowController::lockedNode(std::string node_name, bool locked)
         }
     }
     window->play_bar->reloadCurrentFrameIfStopped();
+}
+
+// From motion creator
+void RenderWindowController::startMotion(double interval, double fps)
+{
+
+}
+void RenderWindowController::cancelMotion()
+{
+
+}
+
+// From joint editor
+void RenderWindowController::receivedMotionData(BVHJointEidtor::EditedValueType type, int x, int y, int z, int w)
+{
+
+}
+void RenderWindowController::initialMotion()
+{
+
+}
+void RenderWindowController::rollbackMotion()
+{
+
+}
+void insertMotion()
+{
+
+}
+double getMotionValueAtIndex(unsigned int index)
+{
+
 }

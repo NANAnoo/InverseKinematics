@@ -26,19 +26,23 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+    src/BVHJointEidtor.cpp \
     src/BVHJointViewer.cpp \
+    src/BVHMotionCreater.cpp \
         src/FilePickerWidget.cpp \
-        src/PlayBarWidget.cpp \
         src/BVHModel.cpp \
         src/BVHRenderWidget.cpp \
         src/RenderWindow.cpp \
         src/RenderWindowController.cpp \
+    src/PlayBarWidget.cpp \
         src/main.cpp \
 
 HEADERS += \
+        src/BVHJointEidtor.h \
         src/BVHJointViewer.h \
         src/BVHModel.h \
         src/BVHModelMacros.h \
+        src/BVHMotionCreater.h \
         src/BVHRenderWidget.h \
         Eigen/src/Cholesky/LDLT.h \
         Eigen/src/Cholesky/LLT.h \
@@ -350,7 +354,7 @@ HEADERS += \
         src/RenderWindow.h \
         src/RenderWindowController.h \
         src/FilePickerWidget.h \
-        src/PlayBarWidget.h 
+        src/PlayBarWidget.h
 
 win32 {
     LIBS += -lopengl32

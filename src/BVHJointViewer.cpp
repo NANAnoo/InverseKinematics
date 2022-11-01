@@ -10,7 +10,7 @@ BVHJointViewer::BVHJointViewer(QWidget *parent) : QWidget(parent)
     // layout
     int width = parent->geometry().width();
     int height = parent->geometry().height();
-    setGeometry(5, 5, width / 4 - 10, height - 10);
+    setGeometry(5, 5, width / 4 - 10, height / 8 * 7 - 10);
     treeViwer->setGeometry(this->geometry());
     width = this->geometry().width();
     // set up viewer
