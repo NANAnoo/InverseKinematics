@@ -22,7 +22,7 @@ BVHModel::BVHModel(const std::string filename)
     unsigned int i;
     channel_num = 0;
     is_valid = false;
-    defaultMotion = nullptr;
+    default_motion = nullptr;
 
     // open the file
     file.open(filename, ios::in);
@@ -496,9 +496,9 @@ std::vector<double> *BVHModel::motionDataAt(unsigned int frame_ID)
 {
     if (motion_datas != nullptr && motion_datas->size() > frame_ID)
         return (*motion_datas)[frame_ID];
-    if (defaultMotion == nullptr)
-        defaultMotion = new vector<double>(channel_num, 0);
-    return defaultMotion;
+    if (default_motion == nullptr)
+        default_motion = new vector<double>(channel_num, 0);
+    return default_motion;
 }
 
 std::vector<BVH::BVHMetaNode> BVHModel::getMetaList()

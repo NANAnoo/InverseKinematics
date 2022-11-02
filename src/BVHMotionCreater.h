@@ -24,6 +24,8 @@ private:
 public:
     BVHMotionCreater(QWidget *parent);
     void loadView();
+    void setValid(bool value) {motion_create_cancel_btn->setEnabled(value);}
+
 
 signals:
     void motionStart(double interval, double fps);

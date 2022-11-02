@@ -28,7 +28,20 @@ public:
 
     void loadView();
 
-    void setIsAddingMotion(bool value) {is_adding_motion = value; loadView();}
+    void setIsAddingMotion(bool value) {
+        is_adding_motion = value;
+        if (is_adding_motion) {
+            type = DestinationType;
+            motion_control_group->button(1)->setChecked(true);
+        } else {
+            type = JointTranslationType;
+            is_previewing = false;
+            silder_mode_group->button(1)->setChecked(true);
+        }
+        loadView();
+    }
+
+    void setJoint(BVH::BVHJoint *node) {joint = node; loadView();}
 
 private:
     enum SliderType {
@@ -44,7 +57,7 @@ private:
         int end[4];
     };
 
-    QLabel *jointDetial;
+    QLabel *joint_detial;
     // controllers
     QSlider *x_silder;
     QLabel *x_silder_label;
@@ -88,9 +101,9 @@ private:
 signals:
     void editDataChanged(EditedValueType type, int x, int y, int z, int w);
     // preview clicked
-    void motionCommited();
+    void previewStarted();
     // stop preview
-    void motionRollback();
+    void previewEnded();
     // accept current motion
     void motionAccepted();
     // delegate method:

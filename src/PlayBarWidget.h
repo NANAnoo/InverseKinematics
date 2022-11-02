@@ -42,10 +42,12 @@ public:
     void setFrameCount(unsigned int count);
     // auto play duration
     void setFrameDuation(double duation);
+    // get current frame id
+    unsigned int getCurrentFrame() {return current_frame;}
     // update view
     void loadView();
     // set validate
-    void setValid(bool valid){ is_valid = valid; }
+    void setValid(bool valid){ is_valid = valid; loadView();}
     // reload current frame
     void reloadCurrentFrameIfStopped();
 

@@ -5,17 +5,18 @@
 BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
 {
     // initial all properties
-    jointDetial = new QLabel(this);
     joint = nullptr;
-    // controllers
-    x_silder_label = new QLabel(this);
-    y_silder_label = new QLabel(this);
-    z_silder_label = new QLabel(this);
-    w_silder_label = new QLabel(this);
+    // init labels
+    for (QLabel **label : {&joint_detial, &x_silder_label, &y_silder_label, &z_silder_label, &w_silder_label}) {
+        *label = new QLabel(this);
+        (*label)->setAlignment(Qt::AlignCenter);
+    }
+
+    // init silders
     for (QSlider **slider : {&x_silder, &y_silder, &z_silder, &w_silder}) {
         *slider = new QSlider(this);
-        (*slider)->setMinimum(100);
-        (*slider)->setMinimum(-100);
+        (*slider)->setMinimum(200);
+        (*slider)->setMinimum(1);
         (*slider)->setTickInterval(1);
         (*slider)->setSliderPosition(0);
     }
@@ -24,7 +25,7 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     silder_mode_group = new QButtonGroup(this);
     QRadioButton *trasilation_btn = new QRadioButton(this);
     QRadioButton *rotation_btn = new QRadioButton(this);
-    trasilation_btn->setDown(true);
+    trasilation_btn->setChecked(true);
     trasilation_btn->setText("trasilation");
     rotation_btn->setText("rotation");
     silder_mode_group->addButton(trasilation_btn, 1);
@@ -36,6 +37,7 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     QRadioButton *desitination_btn = new QRadioButton(this);
     QRadioButton *begin_control_btn = new QRadioButton(this);
     QRadioButton *end_control_btn = new QRadioButton(this);
+    desitination_btn->setChecked(true);
     desitination_btn->setText("target");
     begin_control_btn->setText("begin");
     end_control_btn->setText("end");
@@ -73,43 +75,45 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     // layout
     int width = parent->width();
     int height = parent->height();
-    this->setGeometry(width / 4 * 3 + 10, height / 10 , width / 4 - 20, height / 10 * 8);
+    this->setGeometry(width / 4 * 3 + 10, 0 , width / 4 - 20, height / 10 * 9);
+    joint_detial->setGeometry(5, 5, this->width() - 10, this->height() / 9 - 10);
     // left side
     width = this->width() / 3 * 2;
-    height = this->height();
-    x_silder->setGeometry(5, 5, width / 4 - 10, height / 8 * 7 - 5);
-    y_silder->setGeometry(width / 4 + 5, 5, width / 4 - 10, height / 8 * 7 - 5);
-    z_silder->setGeometry(width / 2 + 5, 5, width / 4 - 10, height / 8 * 7 - 5);
-    w_silder->setGeometry(width / 4 * 3 + 5, 5, width / 4 - 10, height / 8 * 7 - 5);
-    x_silder_label->setGeometry(0, height / 8 * 7, width / 4, height / 8);
-    y_silder_label->setGeometry(width / 4, height / 8 * 7, width / 4, height / 8);
-    z_silder_label->setGeometry(width / 2, height / 8 * 7, width / 4, height / 8);
-    w_silder_label->setGeometry(width / 4 * 3, height / 8 * 7, width / 4, height / 8);
+    height = this->height() / 9 * 8;
+    x_silder->setGeometry(5, height / 8 + 5, width / 4 - 10, height / 8 * 7 - 5);
+    y_silder->setGeometry(width / 4 + 5, height / 8 + 5, width / 4 - 10, height / 8 * 7 - 5);
+    z_silder->setGeometry(width / 2 + 5, height / 8 + 5, width / 4 - 10, height / 8 * 7 - 5);
+    w_silder->setGeometry(width / 4 * 3 + 5, height / 8 + 5, width / 4 - 10, height / 8 * 7 - 5);
+    x_silder_label->setGeometry(0, height, width / 4, height / 8);
+    y_silder_label->setGeometry(width / 4, height, width / 4, height / 8);
+    z_silder_label->setGeometry(width / 2, height, width / 4, height / 8);
+    w_silder_label->setGeometry(width / 4 * 3, height, width / 4, height / 8);
     // right side
     width = this->width() / 3;
     int x = width * 2 + 10;
-    trasilation_btn->setGeometry(x, height / 16, width - 20, height / 16);
-    rotation_btn->setGeometry(x, height / 16 * 2, width - 20, height / 16);
-    desitination_btn->setGeometry(x, height / 16 * 6, width - 20, height / 16);
-    begin_control_btn->setGeometry(x, height / 16 * 8, width - 20, height / 16);
-    end_control_btn->setGeometry(x, height / 16 * 10, width - 20, height / 16);
-    preview_btn->setGeometry(x, height / 16 * 13, width - 20, height / 16);
-    accept_btn->setGeometry(x, height / 16 * 15, width - 20, height / 16);
+    int height_from = height / 8;
+    trasilation_btn->setGeometry(x, height_from + height / 16, width - 20, height / 16);
+    rotation_btn->setGeometry(x, height_from + height / 16 * 2, width - 20, height / 16);
+    desitination_btn->setGeometry(x, height_from + height / 16 * 6, width - 20, height / 16);
+    begin_control_btn->setGeometry(x, height_from + height / 16 * 8, width - 20, height / 16);
+    end_control_btn->setGeometry(x, height_from + height / 16 * 10, width - 20, height / 16);
+    preview_btn->setGeometry(x, height_from + height / 16 * 13, width - 20, height / 16);
+    accept_btn->setGeometry(x, height_from + height / 16 * 15, width - 20, height / 16);
 
     // set bindings
     x_silder->connect(x_silder, &QSlider::valueChanged, [=](int value){
         if (!is_loading_view)
             this->sliderdataChanged(XSlider, getValueFromSlider(x_silder, value));
     });
-    y_silder->connect(x_silder, &QSlider::valueChanged, [=](int value){
+    y_silder->connect(y_silder, &QSlider::valueChanged, [=](int value){
         if (!is_loading_view)
             this->sliderdataChanged(YSlider, getValueFromSlider(y_silder, value));
     });
-    z_silder->connect(x_silder, &QSlider::valueChanged, [=](int value){
+    z_silder->connect(z_silder, &QSlider::valueChanged, [=](int value){
         if (!is_loading_view)
             this->sliderdataChanged(ZSlider, getValueFromSlider(z_silder, value));
     });
-    w_silder->connect(x_silder, &QSlider::valueChanged, [=](int value){
+    w_silder->connect(w_silder, &QSlider::valueChanged, [=](int value){
         if (!is_loading_view)
             this->sliderdataChanged(WSlider, getValueFromSlider(w_silder, value));
     });
@@ -133,9 +137,10 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     preview_btn->connect(preview_btn, &QPushButton::released, [=](){
         // start or stoppreview
         is_previewing = !is_previewing;
-        is_previewing ? emit motionCommited() : emit motionRollback();
+        is_previewing ? emit previewStarted() : emit previewEnded();
     });
     accept_btn->connect(accept_btn, &QPushButton::released, [=](){
+        is_previewing = false;
         emit motionAccepted();
     });
     loadView();
@@ -146,14 +151,14 @@ void BVHJointEidtor::loadView()
     is_loading_view = true;
     char buffer[50];
     if (joint == nullptr) {
-        this->jointDetial->setText("Unknown Joint");
+        this->joint_detial->setText("Unknown Joint");
     } else {
         // setup information, name $(is_locked) $(is_site)
         std::snprintf(buffer, 50, "%s%s %s",
                       joint->name.c_str(),
                       (joint->render_type & BVH::LockedType) > 0 ? " locked" : "",
                       joint->has_site ? "(site)" : "");
-        this->jointDetial->setText(buffer);
+        this->joint_detial->setText(buffer);
     }
     double x = 0, y = 0, z = 0, w = 1;
     switch (type) {
@@ -209,10 +214,10 @@ void BVHJointEidtor::loadView()
         z /= w;
     }
     // set position of silders
-    x_silder->setSliderPosition(static_cast<int>(x));
-    y_silder->setSliderPosition(static_cast<int>(y));
-    z_silder->setSliderPosition(static_cast<int>(z));
-    w_silder->setSliderPosition(static_cast<int>(w));
+    x_silder->setSliderPosition(static_cast<int>(x + 100));
+    y_silder->setSliderPosition(static_cast<int>(y + 100));
+    z_silder->setSliderPosition(static_cast<int>(z + 100));
+    w_silder->setSliderPosition(static_cast<int>(w + 100));
     // set up labels
     setSliderText(XSlider, x);
     setSliderText(YSlider, y);
@@ -244,19 +249,19 @@ void BVHJointEidtor::setSliderText(SliderType type, double value)
     char buffer[20];
     switch(type) {
         case XSlider:
-            std::snprintf(buffer, 20, "X /n %.2f", value);
+            std::snprintf(buffer, 20, "X \n %.2f", value);
             x_silder_label->setText(buffer);
             break;
         case YSlider:
-            std::snprintf(buffer, 20, "Y /n %.2f", value);
+            std::snprintf(buffer, 20, "Y \n %.2f", value);
             y_silder_label->setText(buffer);
             break;
         case ZSlider:
-            std::snprintf(buffer, 20, "Z /n %.2f", value);
+            std::snprintf(buffer, 20, "Z \n %.2f", value);
             z_silder_label->setText(buffer);
             break;
         case WSlider:
-            std::snprintf(buffer, 20, "W /n %.2f", value);
+            std::snprintf(buffer, 20, "W \n %.2f", value);
             w_silder_label->setText(buffer);
             break;
     };
@@ -268,6 +273,7 @@ void BVHJointEidtor::sliderdataChanged(SliderType type, int value)
     int index = static_cast<int>(type);
     if (index < 0 || index > 3) return;
     int *arr = nullptr;
+    value = value - 100;
     if (this->type == DestinationType) {
         motion_info.desitination[index] = value;
         arr = motion_info.desitination;

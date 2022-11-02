@@ -20,11 +20,21 @@ private:
     RenderWindow *window;
     BVHModel *current_model;
     BVHModel *editing_model;
-    bool isEditing;
+    bool is_editing;
     void setup();
     std::string previous_selected_joint;
+    int motion_offset_start;
+    int motion_offset_end;
+    int last_motion_offset;
 public:
-    RenderWindowController(RenderWindow *win):window(win), current_model(nullptr), editing_model(nullptr), isEditing(false) {setup();}
+    RenderWindowController(RenderWindow *win):window(win),
+        current_model(nullptr),
+        editing_model(nullptr),
+        is_editing(false),
+        motion_offset_start(-1),
+        motion_offset_end(-1),
+        last_motion_offset(-1)
+        {setup();}
     
 signals:
 
@@ -35,7 +45,6 @@ public slots:
 
     // From Play Bar
     void renderFrameAt(unsigned int frame_ID);
-    void stopFrameAt(unsigned int frame_ID);
 
     // From joint viwer
     void selectedNode(std::string node_name);
@@ -47,8 +56,8 @@ public slots:
 
     // From joint editor
     void receivedMotionData(BVHJointEidtor::EditedValueType type, int x, int y, int z, int w);
-    void initialMotion();
-    void rollbackMotion();
+    void startPreviewMotion();
+    void stopPreviewMotion();
     void insertMotion();
     double getMotionValueAtIndex(unsigned int index);
 };

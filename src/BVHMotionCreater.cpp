@@ -60,7 +60,7 @@ BVHMotionCreater::BVHMotionCreater(QWidget *parent) : QWidget(parent)
     });
 
     loadView();
-
+    setValid(false);
 }
 
 void BVHMotionCreater::loadView()

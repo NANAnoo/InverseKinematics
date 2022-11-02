@@ -18,6 +18,18 @@ public:
     // dealloc
     ~BVHModel();
 
+    // get model snapshot at frame
+    BVHModel *snapShotModelAt(unsigned int frame_ID) {
+       std::vector<double> *data = new std::vector<double>(*motionDataAt(frame_ID));
+       BVHModel *model = new BVHModel(skeleton);
+       model->motion_datas = new std::vector<std::vector<double> *>();
+       model->motion_datas->push_back(data);
+       model->joint_map = joint_map;
+       model->channel_num = channel_num;
+       model->frame_duration = frame_duration;
+       return model;
+    }
+
     // get position of a joint
     Eigen::Vector4f jointPositionAt(unsigned int frame_ID, const std::string joint_name, double scale);
     // get the joint from name
@@ -32,22 +44,36 @@ public:
     // get meta info list
     std::vector<BVH::BVHMetaNode> getMetaList();
 
+    // get motion value
+    double getMotionValue(unsigned int frame_ID, unsigned int index)
+    {
+        if (frame_ID < motion_datas->size() && index < channel_num)
+            return (*motionDataAt(frame_ID))[index];
+        else
+            return 0;
+    }
+
     // motion information
     unsigned int allFrameCount() {return motion_datas->size();}
-    unsigned int channel_num;
-    double frame_duration;
 
     // valid information
     bool isValid(){return is_valid;}
 
+    double frame_duration;
+    unsigned int channel_num;
     // root Joint
     BVHJoint *skeleton;
+
 
 private:
 
     std::map<std::string, BVHJoint *> joint_map;
     // frame info
     std::vector<std::vector<double> *> *motion_datas;
+    // default motion
+    std::vector<double> *default_motion;
+    // valid status;
+    bool is_valid;
     // render all joints
     void renderJoint(BVHJoint *joint,
                      BVH::boneRenderHandler &boneRender,
@@ -55,12 +81,9 @@ private:
                      Eigen::MatrixXf current_transition,
                      std::vector<double>::iterator &it,
                      double scale);
-    // valid status;
-    bool is_valid;
     // private functions:
     // get motion data at frame
     std::vector<double> *motionDataAt(unsigned int frame_ID);
-    std::vector<double> *defaultMotion;
     // rotation util
     Eigen::Matrix4f getRotationMatrix(ChannelEnum type, double alpha);
     Eigen::Matrix4f getTraslationMatrix(double x, double y, double z);

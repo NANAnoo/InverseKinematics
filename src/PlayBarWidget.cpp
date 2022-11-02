@@ -89,6 +89,7 @@ void PlayBarWidget::loadView()
         play_stop_begin->setEnabled(false);
         play_reset->setEnabled(false);
         bar->setMaximum(1);
+        setFrameDuation(frame_duration);
         updateFrame(1);
     }
 }
@@ -126,7 +127,7 @@ void PlayBarWidget::updateFrame(unsigned int frame_ID)
 
 void PlayBarWidget::reloadCurrentFrameIfStopped()
 {
-    if (!is_playing && is_valid) {
+    if (!is_playing) {
         emit frameStopAt(current_frame);
     }
 }
