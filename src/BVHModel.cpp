@@ -447,7 +447,7 @@ void BVHModel::renderJoint(BVHJoint *joint,
         BVHJoint *child = joint->children[0];
         Eigen::Vector4d child_center(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
         child_center = transition * child_center;
-        boneRender(joint_center, child_center, child->render_type, scale);
+        boneRender(joint_center, child_center, joint->render_type, scale);
         renderJoint(child, boneRender, jointRender, transition, it, scale);
     }
     else
@@ -467,7 +467,7 @@ void BVHModel::renderJoint(BVHJoint *joint,
         {
             Eigen::Vector4d child_joint_center(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
             child_joint_center = transition * child_joint_center;
-            boneRender(child_center, child_joint_center, child->render_type, scale);
+            boneRender(child_center, child_joint_center, joint->render_type, scale);
             renderJoint(child, boneRender, jointRender, transition, it, scale);
         }
     }

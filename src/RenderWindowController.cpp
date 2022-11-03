@@ -172,6 +172,9 @@ void RenderWindowController::startMotion(double interval, double fps)
     // initial editing model
     motion_offset_start = window->play_bar->getCurrentFrame() - 1;
     motion_size = static_cast<unsigned int>(interval * fps);
+    if (editing_model != nullptr) {
+        delete editing_model;
+    }
     editing_model = current_model->snapShotModelAt(motion_offset_start);
     editing_model->frame_duration = 1.0 / fps;
     // update curve
@@ -265,12 +268,14 @@ void RenderWindowController::insertMotion()
     // update last_motion_offset
     last_motion_offset = motion_offset_start;
     // insert motion to current model
-    for (unsigned int index = 1; index < motion_size; index ++) {
-        current_model->insertMotionDataFrom(last_motion_offset + index - 1, editing_model->motionDataAt(index));
+    for (unsigned int index = 0; index < motion_size - 1; index ++) {
+        current_model->insertMotionDataFrom(last_motion_offset + index, editing_model->motionDataAt(index + 1));
     }
     // prepare for next motion
     curve->setEnabled(false);
     // update widgets status
+    is_editing = false;
+    current_model->frame_duration = editing_model->frame_duration;
     window->joint_editor->setIsAddingMotion(false);
     window->joint_viewer->setEnabled(true);
     window->play_bar->setFrameCount(current_model->allFrameCount());
@@ -282,5 +287,5 @@ double RenderWindowController::getMotionValueAtIndex(unsigned int index)
 {
     unsigned int current_frame = window->play_bar->getCurrentFrame();
     BVHModel *model = is_editing ? editing_model : current_model;
-    return model->getMotionValue(current_frame, index);
+    return model->getMotionValue(current_frame - 1, index);
 }
