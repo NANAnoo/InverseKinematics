@@ -12,12 +12,15 @@ class BVHJointViewer : public QWidget
     Q_OBJECT
 private:
     QTreeWidget *treeViwer;
+    std::string selected_joint;
 
 public:
     BVHJointViewer(QWidget *parent);
 
     void updateViewWith(std::vector<BVH::BVHMetaNode> nodes);
     void handleLockEvent(bool checked, std::string name);
+
+    std::string getSelectedJointName() {return selected_joint;}
 
 signals:
     void selectedNodeChanged(std::string node_name);

@@ -31,6 +31,12 @@ public:
     void setIsAddingMotion(bool value) {
         is_adding_motion = value;
         if (is_adding_motion) {
+            for (int i = 0; i < 4; i ++) {
+                // set to (0, 0, 0, 1)
+                motion_info.desitination[i] = i == 3 ? 1 : 0;
+                motion_info.begin[i] = i == 3 ? 1 : 0;
+                motion_info.end[i] = i == 3 ? 1 : 0;
+            }
             type = DestinationType;
             motion_control_group->button(1)->setChecked(true);
         } else {
@@ -75,9 +81,6 @@ private:
     QPushButton *preview_btn;
     // accept motion
     QPushButton *accept_btn;
-
-    // motion information
-    BVH::BVHMotionInfo *motionInfo;
 
     // displayed joint
     BVH::BVHJoint *joint;

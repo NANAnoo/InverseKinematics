@@ -53,23 +53,16 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     accept_btn = new QPushButton(this);
     accept_btn->setText("accept");
 
-    // motion information
-    motionInfo = new BVH::BVHMotionInfo();
-    motionInfo->begin = new Eigen::Vector3d(0, 0, 0);
-    motionInfo->end = new Eigen::Vector3d(0, 0, 0);
-    motionInfo->begin_control = new Eigen::Vector3d(0, 0, 0);
-    motionInfo->end_control = new Eigen::Vector3d(0, 0, 0);
-    motionInfo->joint_name = "";
-
     //  flags
     type = JointTranslationType;
     is_adding_motion = false;
     is_previewing = false;
     is_loading_view = false;
     for (int i = 0; i < 4; i ++) {
-        motion_info.desitination[i] = 0;
-        motion_info.begin[i] = 0;
-        motion_info.end[i] = 0;
+        // set to (0, 0, 0, 1)
+        motion_info.desitination[i] = i == 3 ? 1 : 0;
+        motion_info.begin[i] = i == 3 ? 1 : 0;
+        motion_info.end[i] = i == 3 ? 1 : 0;
     }
 
     // layout
@@ -267,6 +260,7 @@ void BVHJointEidtor::setSliderText(SliderType type, double value)
     };
 }
 
+#include <iostream>
 void BVHJointEidtor::sliderdataChanged(SliderType type, int value)
 {
     // change moption info
@@ -285,7 +279,13 @@ void BVHJointEidtor::sliderdataChanged(SliderType type, int value)
         arr = motion_info.end;
     }
     loadView();
+    std::cout << "Data changed at " << this->type
+              << " x:"<< arr[0]
+              << " y:"<< arr[1]
+              << " z:"<< arr[2]
+              << " w:"<< arr[3] << std::endl;
     emit editDataChanged(this->type, arr[0], arr[1], arr[2], arr[3]);
+
 }
 
 void BVHJointEidtor::controlTypeChanged(bool is_rotation)

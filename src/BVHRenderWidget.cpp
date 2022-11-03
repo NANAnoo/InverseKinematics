@@ -1,4 +1,5 @@
 #include "BVHRenderWidget.h"
+#include <QMouseEvent>
 
 BVHRenderWidget::~BVHRenderWidget()
 {
@@ -27,6 +28,10 @@ void BVHRenderWidget::paintGL()
     // set model view
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
+    // rotation
+    glRotatef(rotation_x, 1, 0, 0);
+    glRotatef(rotation_y, 0, 1, 0);
 
     // draw axies
     glLineWidth(1);
@@ -103,6 +108,10 @@ BVH::jointRenderHandler BVHRenderWidget::getJointRender()
                 color = PURPLE_COLOR;
                 width = 50 * radius;
                 break;
+            case BVH::DesitinationType:
+                color = WHITE_COLOR;
+                width = 50 * radius;
+                break;
         }
         glPointSize(width);
         glColor3f(FLOAT_RED(color), FLOAT_GREEN(color), FLOAT_BLUE(color));
@@ -110,4 +119,37 @@ BVH::jointRenderHandler BVHRenderWidget::getJointRender()
         glVertex3f(centor.x(), centor.y(), centor.z());
         glEnd();
     };
+}
+
+// mouse handle
+void BVHRenderWidget::mousePressEvent(QMouseEvent *event)
+{
+    // prepare rotation
+    isDraging = true;
+    // record current position
+    last_mouse_position_x = event->x();
+    last_mouse_position_y = event->y();
+}
+
+void BVHRenderWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    if (isDraging) {
+        // find the movement
+        float d_x = static_cast<float>(event->x() - last_mouse_position_x);
+        float d_y = static_cast<float>(event->y() - last_mouse_position_y);
+        // update rotation
+        rotation_y += d_x;
+        rotation_x += d_y;
+        // update recorded mouse position
+        last_mouse_position_x = event->x();
+        last_mouse_position_y = event->y();
+        // repaint
+        update();
+    }
+}
+
+void BVHRenderWidget::mouseReleaseEvent(QMouseEvent *event)
+{
+    // end rotation
+    isDraging = false;
 }

@@ -213,43 +213,56 @@ BVHModel::BVHModel(const std::string filename)
 Eigen::Vector4f BVHModel::jointPositionAt(unsigned int frame_ID, const std::string joint_name, double scale)
 {
     BVHJoint *joint = joint_map[joint_name];
-    vector<double> *motiondata = motionDataAt(frame_ID);
-    Eigen::Vector4f coords(joint->offset[0], joint->offset[1], joint->offset[2], 1);
+    vector<double> motiondata = *motionDataAt(frame_ID);
+    Eigen::Vector4f coords(0, 0, 0, 1);
     Eigen::Matrix4f transition = Eigen::Matrix4f::Identity();
     // do FK until joint
     while (joint != nullptr)
     {
-        double ax = 0, ay = 0, az = 0;
+        double ax = 0, ay = 0, az = 0, x = 0, y = 0, z = 0;
+        unsigned int i = 0;
         for (ChannelEnum c : joint->channels)
         {
+            double value = motiondata[joint->channel_index_offset + i];
+            i ++;
             switch (c)
             {
             case X_ROTATION:
-                ax = (*motiondata)[joint->channel_index_offset];
+                ax = value;
                 break;
             case Y_ROTATION:
-                ay = (*motiondata)[joint->channel_index_offset + 1];
+                ay = value;
                 break;
             case Z_ROTATION:
-                az = (*motiondata)[joint->channel_index_offset + 2];
+                az = value;
                 break;
-            default:
+            case X_POSITION:
+                x = value;
+                break;
+            case Y_POSITION:
+                y = value;
+                break;
+            case Z_POSITION:
+                z = value;
                 break;
             }
         }
-        transition = transition * getRotationMatrix(Z_ROTATION, az) *
-                     getRotationMatrix(Y_ROTATION, ay) *
-                     getRotationMatrix(X_ROTATION, ax);
+        Eigen::Matrix4f Traslation;
         if (joint->parent != nullptr)
         {
-            transition = transition * getTraslationMatrix(joint->offset[0] * scale, joint->offset[1] * scale, joint->offset[2] * scale);
+            Traslation = getTraslationMatrix(joint->offset[0] * scale, joint->offset[1] * scale, joint->offset[2] * scale);
         }
         else
         {
-            transition = transition * getTraslationMatrix((*motiondata)[0] * scale, (*motiondata)[1] * scale, (*motiondata)[2] * scale);
+            Traslation = getTraslationMatrix(x * scale, y * scale, z * scale);
         }
+        transition = Traslation *
+                     getRotationMatrix(Z_ROTATION, az) *
+                     getRotationMatrix(Y_ROTATION, ay) *
+                     getRotationMatrix(X_ROTATION, ax) * transition;
+        joint = joint->parent;
     }
-    return Eigen::Vector4f(0, 0, 0, 1);
+    return transition * coords;
 }
 
 // render skeleton
@@ -314,6 +327,7 @@ void BVHModel::renderJoint(BVHJoint *joint,
     joint_center = transition * joint_center;
     // render joint
     jointRender(joint_center, joint->render_type, scale);
+
     unsigned int size = joint->children.size();
     if (joint->children.size() == 0)
     {
@@ -355,7 +369,7 @@ void BVHModel::renderJoint(BVHJoint *joint,
 
 Eigen::Matrix4f BVHModel::getRotationMatrix(ChannelEnum type, double alpha)
 {
-    alpha = alpha / 180 * 3.1415926535f;
+    alpha = alpha / 180 * MYPI;
     Eigen::Matrix4f rotation;
     if (type == X_ROTATION)
         rotation << 1, 0, 0, 0,

@@ -104,6 +104,7 @@ void FilePickerWidget::saveFilePicker()
         filePaths = opener.selectedFiles();
         if (filePaths.size() > 0) {
             // post file path out
+            current_path.assign(filePaths[0].toStdString());
             emit postSavedFile(filePaths[0].toStdString());
             std::cout << "Select saved file: " << filePaths[0].toStdString() << std::endl;
         }

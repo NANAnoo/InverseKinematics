@@ -4,6 +4,7 @@
 #include <QObject>
 #include "RenderWindow.h"
 #include "BVHModel.h"
+#include "BezierCurve.h"
 
 class RenderWindowController : public QObject
 {
@@ -20,20 +21,22 @@ private:
     RenderWindow *window;
     BVHModel *current_model;
     BVHModel *editing_model;
+    BezierCurve *curve;
     bool is_editing;
     void setup();
     std::string previous_selected_joint;
-    int motion_offset_start;
-    int motion_offset_end;
-    int last_motion_offset;
+    unsigned int motion_offset_start;
+    unsigned int motion_offset_end;
+    unsigned int last_motion_offset;
 public:
     RenderWindowController(RenderWindow *win):window(win),
         current_model(nullptr),
         editing_model(nullptr),
+        curve(new BezierCurve(2)),
         is_editing(false),
-        motion_offset_start(-1),
-        motion_offset_end(-1),
-        last_motion_offset(-1)
+        motion_offset_start(0),
+        motion_offset_end(0),
+        last_motion_offset(0)
         {setup();}
     
 signals:

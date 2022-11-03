@@ -18,11 +18,13 @@ namespace BVH
 #define FLOAT_RED(color) (static_cast<float>((color & RED_COLOR) >> 24) / 255.f)
 #define FLOAT_GREEN(color) (static_cast<float>((color & GREEN_COLOR) >> 16) / 255.f)
 #define FLOAT_BLUE(color) (static_cast<float>((color & BLUE_COLOR) >> 8) / 255.f)
+#define MYPI 3.1415926535f
 
 enum RenderType {
-    DefaultType,
-    SelectedType,
-    LockedType
+    DefaultType      = 0,
+    SelectedType     = 1,
+    LockedType       = 1 << 1,
+    DesitinationType = 1 << 2
 };
 struct BVHMetaNode
 {

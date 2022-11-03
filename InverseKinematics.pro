@@ -29,6 +29,7 @@ SOURCES += \
     src/BVHJointEidtor.cpp \
     src/BVHJointViewer.cpp \
     src/BVHMotionCreater.cpp \
+    src/BezierCurve.cpp \
         src/FilePickerWidget.cpp \
         src/BVHModel.cpp \
         src/BVHRenderWidget.cpp \
@@ -351,6 +352,7 @@ HEADERS += \
         Eigen/src/plugins/MatrixCwiseBinaryOps.h \
         Eigen/src/plugins/MatrixCwiseUnaryOps.h \
         Eigen/src/plugins/ReshapedMethods.h \
+        src/BezierCurve.h \
         src/RenderWindow.h \
         src/RenderWindowController.h \
         src/FilePickerWidget.h \

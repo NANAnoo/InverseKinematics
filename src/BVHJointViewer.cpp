@@ -51,8 +51,9 @@ void BVHJointViewer::updateViewWith(std::vector<BVH::BVHMetaNode> nodes)
 void BVHJointViewer::handleSelectEvent(QTreeWidgetItem *item, int column)
 {
     if (column == 0) {
-        selectedNodeChanged(item->text(0).toStdString());
-        std::cout << " Joint: " << item->text(0).toStdString() << " selected" << std::endl;
+        selected_joint = item->text(0).toStdString();
+        selectedNodeChanged(selected_joint);
+        std::cout << " Joint: " << selected_joint << " selected" << std::endl;
     }
 }
 
