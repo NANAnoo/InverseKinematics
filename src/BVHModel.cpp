@@ -210,12 +210,16 @@ BVHModel::BVHModel(const std::string filename)
 }
 
 // get position of a joint
-Eigen::Vector4f BVHModel::jointPositionAt(unsigned int frame_ID, const std::string joint_name, double scale)
+Eigen::Vector4d BVHModel::jointPositionAt(unsigned int frame_ID, const std::string joint_name, double scale)
 {
-    BVHJoint *joint = joint_map[joint_name];
-    vector<double> motiondata = *motionDataAt(frame_ID);
-    Eigen::Vector4f coords(0, 0, 0, 1);
-    Eigen::Matrix4f transition = Eigen::Matrix4f::Identity();
+    return jointPositionFromMotion(*motionDataAt(frame_ID), joint_map[joint_name], scale);
+}
+
+
+Eigen::Vector4d BVHModel::jointPositionFromMotion(std::vector<double> motion, BVHJoint *joint, double scale)
+{
+    Eigen::Vector4d coords(0, 0, 0, 1);
+    Eigen::Matrix4d transition = Eigen::Matrix4d::Identity();
     // do FK until joint
     while (joint != nullptr)
     {
@@ -223,7 +227,7 @@ Eigen::Vector4f BVHModel::jointPositionAt(unsigned int frame_ID, const std::stri
         unsigned int i = 0;
         for (ChannelEnum c : joint->channels)
         {
-            double value = motiondata[joint->channel_index_offset + i];
+            double value = motion[joint->channel_index_offset + i];
             i ++;
             switch (c)
             {
@@ -247,7 +251,7 @@ Eigen::Vector4f BVHModel::jointPositionAt(unsigned int frame_ID, const std::stri
                 break;
             }
         }
-        Eigen::Matrix4f Traslation;
+        Eigen::Matrix4d Traslation;
         if (joint->parent != nullptr)
         {
             Traslation = getTraslationMatrix(joint->offset[0] * scale, joint->offset[1] * scale, joint->offset[2] * scale);
@@ -265,6 +269,108 @@ Eigen::Vector4f BVHModel::jointPositionAt(unsigned int frame_ID, const std::stri
     return transition * coords;
 }
 
+
+void BVHModel::insertMotionFrom(unsigned int frame_ID, std::string joint_name, Eigen::Vector3d desitination, double scale)
+{
+    // get current joint
+    BVHJoint *target_joint = joint_map[joint_name], *joint = target_joint->parent;
+    if (joint == nullptr)
+        return;
+    // trace to root, find all availible control points
+    std::vector<BVHJoint *> control_joints;
+    while (joint != nullptr) {
+        // enable unlocked joints
+        if ((joint->render_type & LockedType) == 0) {
+            control_joints.push_back(joint);
+        }
+        joint = joint->parent;
+    }
+    std::vector<double> *base_motion = motionDataAt(frame_ID), *result_motion = nullptr;
+    base_motion = new std::vector<double>(base_motion->begin(), base_motion->end());
+    double gap_length = 0;
+    int step = 0;
+    // update motion until reach desitination
+    do {
+        result_motion = stepIKMotionFrom(control_joints, *base_motion, target_joint, desitination, scale);
+        Eigen::Vector4d result_coords = jointPositionFromMotion(*result_motion, target_joint, scale);
+        double dx = result_coords.x() - desitination.x();
+        double dy = result_coords.y() - desitination.y();
+        double dz = result_coords.z() - desitination.z();
+        gap_length = std::sqrt(dx * dx + dy * dy + dz * dz);
+        //std::cout <<"Frame " << frame_ID << " gap length : " << gap_length << std::endl;
+        delete base_motion;
+        base_motion = result_motion;
+        step ++;
+    } while(gap_length > 0.00001 && step < MAX_STEP);
+
+    motion_datas->insert(motion_datas->begin() + frame_ID + 1, result_motion);
+}
+
+std::vector<double> *BVHModel::stepIKMotionFrom(std::vector<BVHJoint *> &control_joints,
+                                                std::vector<double> base_motion,
+                                                BVHJoint *target_joint,
+                                                Eigen::Vector3d desitination,
+                                                double scale)
+{
+    // base on base motion, find out the Jacobian Matrix
+    Eigen::Vector4d base_coords = jointPositionFromMotion(base_motion, target_joint, scale);
+    Eigen::MatrixXd Jacobian;
+    Jacobian.resize(3, control_joints.size() * 3);
+    Jacobian.setZero();
+    unsigned int col_index = 0;
+    for (BVHJoint *control_joint : control_joints) {
+        unsigned int offset = control_joint->channel_index_offset;
+        for (ChannelEnum c : control_joint->channels)
+        {
+            if (c == X_ROTATION || c == Y_ROTATION || c == Z_ROTATION) {
+                std::vector<double> diff_motion(base_motion.begin(), base_motion.end());
+                // add a small delta angle
+                diff_motion[offset] = diff_motion[offset] + DELTA_ANGLE;
+                // caculate the new coords at diff_motion;
+                Eigen::Vector4d diff_coords = jointPositionFromMotion(diff_motion, target_joint, scale);
+                Eigen::Vector4d delta_coords = diff_coords - base_coords;
+                // assign value to Jacobian, d_x|y|z / d_theta
+                Jacobian(0, col_index) = delta_coords.x() / DELTA_ANGLE;
+                Jacobian(1, col_index) = delta_coords.y() / DELTA_ANGLE;
+                Jacobian(2, col_index) = delta_coords.z() / DELTA_ANGLE;
+                col_index ++;
+            }
+            offset ++;
+        }
+
+    }
+
+    // calculate delta movement
+    Eigen::Vector3d delta_movement(desitination.x() - base_coords.x(),
+                                   desitination.y() - base_coords.y(),
+                                   desitination.z() - base_coords.z());
+    // damped IK
+    // J * delta_theta = delta_movement
+    // J_+ = J_T * inv(J_T * J + lamda^2 * I);
+    // J_+ * delta_movement = delta_theta
+    Eigen::MatrixXd Jacobian_T = Jacobian.transpose();
+    Eigen::MatrixXd I;
+    I.resize(3, 3);
+    I.setIdentity();
+    Eigen::MatrixXd Jacobian_prime = Jacobian_T * (Jacobian * Jacobian_T + I * (DAMPED_LAMBDA * DAMPED_LAMBDA)).inverse();
+    Eigen::MatrixXd delta_theta = Jacobian_prime * delta_movement;
+    // build motion data base on delta_theta
+    unsigned int raw_index = 0;
+    std::vector<double> *result_motion = new std::vector<double>(base_motion.begin(), base_motion.end());
+    for (BVHJoint *control_joint : control_joints) {
+        unsigned int offset = control_joint->channel_index_offset;
+        for (ChannelEnum c : control_joint->channels)
+        {
+            if (c == X_ROTATION || c == Y_ROTATION || c == Z_ROTATION) {
+                (*result_motion)[offset] = (*result_motion)[offset] + delta_theta(raw_index);
+                raw_index ++;
+            }
+            offset ++;
+        }
+    }
+    return result_motion;
+}
+
 // render skeleton
 void BVHModel::renderModelWith(BVH::boneRenderHandler boneRender, BVH::jointRenderHandler jointRender, unsigned int frame_ID, double scale)
 {
@@ -272,7 +378,7 @@ void BVHModel::renderModelWith(BVH::boneRenderHandler boneRender, BVH::jointRend
     {
         std::vector<double> *motion = motionDataAt(frame_ID);
         vector<double>::iterator it = motion->begin();
-        renderJoint(skeleton, boneRender, jointRender, Eigen::Matrix4f::Identity(), it, scale);
+        renderJoint(skeleton, boneRender, jointRender, Eigen::Matrix4d::Identity(), it, scale);
     }
 }
 
@@ -280,7 +386,7 @@ void BVHModel::renderModelWith(BVH::boneRenderHandler boneRender, BVH::jointRend
 void BVHModel::renderJoint(BVHJoint *joint,
                            BVH::boneRenderHandler &boneRender,
                            BVH::jointRenderHandler &jointRender,
-                           Eigen::MatrixXf current_transition,
+                           Eigen::Matrix4d current_transition,
                            std::vector<double>::iterator &it,
                            double scale)
 {
@@ -318,12 +424,12 @@ void BVHModel::renderJoint(BVHJoint *joint,
         y = joint->offset[1] * scale;
         z = joint->offset[2] * scale;
     }
-    Eigen::Matrix4f transition = current_transition *
+    Eigen::Matrix4d transition = current_transition *
                                  getTraslationMatrix(x, y, z) *
                                  getRotationMatrix(Z_ROTATION, az) *
                                  getRotationMatrix(Y_ROTATION, ay) *
                                  getRotationMatrix(X_ROTATION, ax);
-    Eigen::Vector4f joint_center(0, 0, 0, 1);
+    Eigen::Vector4d joint_center(0, 0, 0, 1);
     joint_center = transition * joint_center;
     // render joint
     jointRender(joint_center, joint->render_type, scale);
@@ -332,14 +438,14 @@ void BVHModel::renderJoint(BVHJoint *joint,
     if (joint->children.size() == 0)
     {
         // render site bone;
-        Eigen::Vector4f site_end(joint->site[0] * scale, joint->site[1] * scale, joint->site[2] * scale, 1);
+        Eigen::Vector4d site_end(joint->site[0] * scale, joint->site[1] * scale, joint->site[2] * scale, 1);
         site_end = transition * site_end;
         boneRender(joint_center, site_end, joint->render_type, scale);
     }
     else if ((joint->children.size() == 1))
     {
         BVHJoint *child = joint->children[0];
-        Eigen::Vector4f child_center(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
+        Eigen::Vector4d child_center(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
         child_center = transition * child_center;
         boneRender(joint_center, child_center, child->render_type, scale);
         renderJoint(child, boneRender, jointRender, transition, it, scale);
@@ -347,11 +453,11 @@ void BVHModel::renderJoint(BVHJoint *joint,
     else
     {
         // render bone
-        Eigen::Vector4f child_center(0, 0, 0, 1);
+        Eigen::Vector4d child_center(0, 0, 0, 1);
         for (unsigned int i = 0; i < size; i++)
         {
             BVHJoint *child = joint->children[i];
-            child_center += Eigen::Vector4f(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
+            child_center += Eigen::Vector4d(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
         }
         // get center of all joints
         child_center = child_center / (size + 1);
@@ -359,7 +465,7 @@ void BVHModel::renderJoint(BVHJoint *joint,
         boneRender(joint_center, child_center, joint->render_type, scale);
         for (BVHJoint *child : joint->children)
         {
-            Eigen::Vector4f child_joint_center(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
+            Eigen::Vector4d child_joint_center(child->offset[0] * scale, child->offset[1] * scale, child->offset[2] * scale, 1);
             child_joint_center = transition * child_joint_center;
             boneRender(child_center, child_joint_center, child->render_type, scale);
             renderJoint(child, boneRender, jointRender, transition, it, scale);
@@ -367,10 +473,10 @@ void BVHModel::renderJoint(BVHJoint *joint,
     }
 }
 
-Eigen::Matrix4f BVHModel::getRotationMatrix(ChannelEnum type, double alpha)
+Eigen::Matrix4d BVHModel::getRotationMatrix(ChannelEnum type, double alpha)
 {
     alpha = alpha / 180 * MYPI;
-    Eigen::Matrix4f rotation;
+    Eigen::Matrix4d rotation;
     if (type == X_ROTATION)
         rotation << 1, 0, 0, 0,
             0, cosf(alpha), -sinf(alpha), 0,
@@ -392,9 +498,9 @@ Eigen::Matrix4f BVHModel::getRotationMatrix(ChannelEnum type, double alpha)
     return rotation;
 }
 
-Eigen::Matrix4f BVHModel::getTraslationMatrix(double x, double y, double z)
+Eigen::Matrix4d BVHModel::getTraslationMatrix(double x, double y, double z)
 {
-    Eigen::Matrix4f t;
+    Eigen::Matrix4d t;
     t << 1, 0, 0, x,
         0, 1, 0, y,
         0, 0, 1, z,

@@ -11,10 +11,12 @@ void BezierCurve::generate()
     for (unsigned int i = 1; i < piecewise_size - 1; i ++) {
         double t = static_cast<double>(i) / piecewise_size;
         double t_2 = t * t, t_3 = t_2 * t;
+        // t M
         double a = - 1 * t_3 + 3 * t_2 - 3 * t + 1;
         double b =   3 * t_3 - 6 * t_2 + 3 * t;
         double c = - 3 * t_3 + 3 * t_2;
         double d =   1 * t_3;
+        // t M B
         double x = a * start.x() + b * r_start_control.x() + c * r_end_control.x() + d * r_end.x();
         double y = a * start.y() + b * r_start_control.y() + c * r_end_control.y() + d * r_end.y();
         double z = a * start.z() + b * r_start_control.z() + c * r_end_control.z() + d * r_end.z();

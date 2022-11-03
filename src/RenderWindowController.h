@@ -26,8 +26,8 @@ private:
     void setup();
     std::string previous_selected_joint;
     unsigned int motion_offset_start;
-    unsigned int motion_offset_end;
-    unsigned int last_motion_offset;
+    unsigned int motion_size;
+    int last_motion_offset;
 public:
     RenderWindowController(RenderWindow *win):window(win),
         current_model(nullptr),
@@ -35,8 +35,8 @@ public:
         curve(new BezierCurve(2)),
         is_editing(false),
         motion_offset_start(0),
-        motion_offset_end(0),
-        last_motion_offset(0)
+        motion_size(0),
+        last_motion_offset(-1)
         {setup();}
     
 signals:

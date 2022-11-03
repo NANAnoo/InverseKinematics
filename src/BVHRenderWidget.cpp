@@ -56,7 +56,7 @@ void BVHRenderWidget::paintGL()
 
 BVH::boneRenderHandler BVHRenderWidget::getBoneRender()
 {
-    return [&](Eigen::Vector4f start, Eigen::Vector4f end, BVH::RenderType type, float radius)
+    return [&](Eigen::Vector4d start, Eigen::Vector4d end, BVH::RenderType type, float radius)
     {
         unsigned int color = WHITE_COLOR;
         float width = 20 * radius;
@@ -87,7 +87,7 @@ BVH::boneRenderHandler BVHRenderWidget::getBoneRender()
 
 BVH::jointRenderHandler BVHRenderWidget::getJointRender()
 {
-    return [&](Eigen::Vector4f centor, BVH::RenderType type, float radius)
+    return [&](Eigen::Vector4d centor, BVH::RenderType type, float radius)
     {
         float width = 10 * radius;
         unsigned int color = WHITE_COLOR;

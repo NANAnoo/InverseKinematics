@@ -4,6 +4,8 @@
 
 void RenderWindowController::setup()
 {
+    // set up status
+    window->motion_creator->setValid(false);
     // set up connections
     // open & save file
     QObject::connect(window->file_picker, &FilePickerWidget::openedFileChanged,
@@ -56,7 +58,6 @@ void RenderWindowController::showNewModelWithFile(const std::string file_path)
         window->play_bar->setFrameDuation(current_model->frame_duration);
         window->play_bar->setValid(true);
         window->joint_viewer->updateViewWith(current_model->getMetaList());
-        window->motion_creator->setValid(true);
     }
     else
     {
@@ -88,7 +89,8 @@ void RenderWindowController::renderFrameAt(unsigned int frame_ID)
     BVHModel *model = is_editing ? editing_model : current_model;
     // update curve info
     if (curve->getEnabled() && window->joint_viewer->getSelectedJointName().size() > 0) {
-        Eigen::Vector4f position = model->jointPositionAt(frame_ID - 1, window->joint_viewer->getSelectedJointName(), 0.3);
+        unsigned int index = window->joint_editor->isPreviewing() ? 0 : frame_ID - 1;
+        Eigen::Vector4d position = model->jointPositionAt(index, window->joint_viewer->getSelectedJointName(), 0.3);
         curve->setStart(position.x(), position.y(), position.z());
     }
     window->bvh_render->repaintWithRenderCallback(
@@ -114,7 +116,7 @@ void RenderWindowController::renderFrameAt(unsigned int frame_ID)
                 glEnd();
                 // render desitination
                 Eigen::Vector3d last = curve->getLast();
-                Eigen::Vector4f desitination(last.x(), last.y(), last.z(), 0);
+                Eigen::Vector4d desitination(last.x(), last.y(), last.z(), 0);
                 window->bvh_render->getJointRender()(desitination, BVH::DesitinationType, 0.3);
             }
         });
@@ -139,11 +141,12 @@ void RenderWindowController::selectedNode(std::string node_name)
         previous_selected_joint = node_name;
         window->joint_editor->setJoint(joint);
         if (curve->getEnabled()) {
-            Eigen::Vector4f position = model->jointPositionAt(window->play_bar->getCurrentFrame() - 1, node_name, 0.3);
+            Eigen::Vector4d position = model->jointPositionAt(window->play_bar->getCurrentFrame() - 1, node_name, 0.3);
             curve->setStart(position.x(), position.y(), position.z());
         }
     }
     window->play_bar->reloadCurrentFrameIfStopped();
+    window->motion_creator->setValid(true);
 }
 
 void RenderWindowController::lockedNode(std::string node_name, bool locked)
@@ -167,29 +170,36 @@ void RenderWindowController::startMotion(double interval, double fps)
     // prepare for new motion
     is_editing = true;
     // initial editing model
-    editing_model = current_model->snapShotModelAt(window->play_bar->getCurrentFrame() - 1);
+    motion_offset_start = window->play_bar->getCurrentFrame() - 1;
+    motion_size = static_cast<unsigned int>(interval * fps);
+    editing_model = current_model->snapShotModelAt(motion_offset_start);
+    editing_model->frame_duration = 1.0 / fps;
     // update curve
-    curve->setPieceSize(static_cast<unsigned int>(interval * fps));
+    curve->setPieceSize(motion_size);
     curve->setEnabled(true);
     // update widgets
     window->file_picker->changeMode(FilePickerWidget::SAVE_MODE);
-    window->play_bar->setFrameDuation(1.0 / fps);
-    window->play_bar->setFrameCount(static_cast<unsigned int>(interval * fps));
+    window->play_bar->setFrameDuation(editing_model->frame_duration);
+    window->play_bar->setFrameCount(editing_model->allFrameCount());
     window->play_bar->setValid(false);
     window->joint_editor->setIsAddingMotion(true);
 }
 
 void RenderWindowController::cancelMotion()
 {
-    // TODO: delete motion data due to recorded range
+    // delete editing model
+    delete editing_model;
+    editing_model = nullptr;
     // disable current bezier curve
     curve->setEnabled(false);
 
     // update widgets status
-    if (last_motion_offset == 0)
+    if (last_motion_offset < 0)
         // no motion added, changed to open mode
         window->file_picker->changeMode(FilePickerWidget::OPEN_MODE);
-    is_editing = last_motion_offset > 0;
+    is_editing = false;
+    motion_offset_start = 0;
+    motion_size = 0;
     BVHModel *model = is_editing ? editing_model : current_model;
     window->joint_editor->setIsAddingMotion(false);
     window->play_bar->setFrameCount(model->allFrameCount());
@@ -225,23 +235,48 @@ void RenderWindowController::receivedMotionData(BVHJointEidtor::EditedValueType 
 }
 void RenderWindowController::startPreviewMotion()
 {
-    // TODO: calculate motion data from bezier curve with IK
-
-    // TODO: insert into editing model, record the range that need be inserted
-
-    // TODO: enable play bar, auto play current motion
+    if (curve->getEnabled()) {
+        // calculate motion data from bezier curve with IK, insert into editing model
+        unsigned int frame_id = 0;
+        curve->forEach([&](Eigen::Vector3d mid_point, unsigned int index){
+            if (index > 0) {
+                editing_model->insertMotionFrom(frame_id, window->joint_viewer->getSelectedJointName(), mid_point, 0.3);
+                frame_id ++;
+            }
+        });
+        // enable play bar
+        window->play_bar->setFrameCount(editing_model->allFrameCount());
+        window->play_bar->setValid(true);
+        // disable joint select change
+        window->joint_viewer->setEnabled(false);
+    }
 }
 void RenderWindowController::stopPreviewMotion()
 {
     // stop play motion, return to motion edit
+    editing_model->removeMotionFrom(0);
+    window->play_bar->setFrameCount(editing_model->allFrameCount());
+    window->play_bar->setValid(false);
+    // enable joint select change
+    window->joint_viewer->setEnabled(true);
 }
 void RenderWindowController::insertMotion()
 {
     // update last_motion_offset
-    last_motion_offset = editing_model->allFrameCount();
-    // insert added motions into current_model
+    last_motion_offset = motion_offset_start;
+    // insert motion to current model
+    for (unsigned int index = 1; index < motion_size; index ++) {
+        current_model->insertMotionDataFrom(last_motion_offset + index - 1, editing_model->motionDataAt(index));
+    }
     // prepare for next motion
-    // update motion_creator status
+    curve->setEnabled(false);
+    // update widgets status
+    window->joint_editor->setIsAddingMotion(false);
+    window->joint_viewer->setEnabled(true);
+    window->play_bar->setFrameCount(current_model->allFrameCount());
+    window->play_bar->setFrameDuation(current_model->frame_duration);
+    window->play_bar->setValid(true);
+    window->motion_creator->motionCompleted();
 }
 double RenderWindowController::getMotionValueAtIndex(unsigned int index)
 {

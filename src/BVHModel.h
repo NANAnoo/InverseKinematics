@@ -31,7 +31,7 @@ public:
     }
 
     // get position of a joint
-    Eigen::Vector4f jointPositionAt(unsigned int frame_ID, const std::string joint_name, double scale);
+    Eigen::Vector4d jointPositionAt(unsigned int frame_ID, const std::string joint_name, double scale);
     // get the joint from name
     BVHJoint *getJointFromName(const std::string joint_name) {return joint_map[joint_name];}
 
@@ -44,6 +44,9 @@ public:
     // get meta info list
     std::vector<BVH::BVHMetaNode> getMetaList();
 
+    // get motion data at frame
+    std::vector<double> *motionDataAt(unsigned int frame_ID);
+
     // get motion value
     double getMotionValue(unsigned int frame_ID, unsigned int index)
     {
@@ -51,6 +54,23 @@ public:
             return (*motionDataAt(frame_ID))[index];
         else
             return 0;
+    }
+
+    // use IK, insert a new motion that moves the joint to a point from any frame
+    void insertMotionFrom(unsigned int frame_ID, std::string joint_name, Eigen::Vector3d desitination, double scale);
+
+    void insertMotionDataFrom(unsigned int frame_ID, std::vector<double> *data) {
+        motion_datas->insert(motion_datas->begin() + frame_ID + 1, data);
+    }
+
+    // remove motion from ID
+    void removeMotionFrom(unsigned int index) {
+        int num = motion_datas->size() - index - 1;
+        num = num < 0 ? 0 : num;
+        while (num > 0) {
+            motion_datas->pop_back();
+            num --;
+        }
     }
 
     // motion information
@@ -78,19 +98,25 @@ private:
     void renderJoint(BVHJoint *joint,
                      BVH::boneRenderHandler &boneRender,
                      BVH::jointRenderHandler &jointRender,
-                     Eigen::MatrixXf current_transition,
+                     Eigen::Matrix4d current_transition,
                      std::vector<double>::iterator &it,
                      double scale);
     // private functions:
-    // get motion data at frame
-    std::vector<double> *motionDataAt(unsigned int frame_ID);
     // rotation util
-    Eigen::Matrix4f getRotationMatrix(ChannelEnum type, double alpha);
-    Eigen::Matrix4f getTraslationMatrix(double x, double y, double z);
+    Eigen::Matrix4d getRotationMatrix(ChannelEnum type, double alpha);
+    Eigen::Matrix4d getTraslationMatrix(double x, double y, double z);
     // write joint to file
     void writeJointToFile(BVHJoint *joint, std::ofstream &file, unsigned int depth);
-
+    // get all joints info
     void getMetaInfoFrom(BVHJoint *node, std::vector<BVH::BVHMetaNode> &list, unsigned int depth);
+    // get joint position with a motion data
+    Eigen::Vector4d jointPositionFromMotion(std::vector<double> motion, BVHJoint *joint, double scale);
+    // IK step:
+    std::vector<double> *stepIKMotionFrom(std::vector<BVHJoint *> &control_joints,
+                                          std::vector<double> base_motion,
+                                          BVHJoint *target_joint,
+                                          Eigen::Vector3d desitination,
+                                          double scale);
 };
 
 

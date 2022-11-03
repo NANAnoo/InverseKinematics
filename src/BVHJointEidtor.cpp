@@ -130,10 +130,12 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     preview_btn->connect(preview_btn, &QPushButton::released, [=](){
         // start or stoppreview
         is_previewing = !is_previewing;
+        loadView();
         is_previewing ? emit previewStarted() : emit previewEnded();
     });
     accept_btn->connect(accept_btn, &QPushButton::released, [=](){
         is_previewing = false;
+        loadView();
         emit motionAccepted();
     });
     loadView();
@@ -230,8 +232,8 @@ void BVHJointEidtor::loadView()
     for(QAbstractButton* button : motion_control_group->buttons()){
         button->setEnabled(!is_previewing && is_adding_motion);
     }
-    preview_btn->setEnabled(!is_previewing && is_adding_motion);
-    accept_btn->setEnabled(!is_previewing && is_adding_motion);
+    preview_btn->setEnabled(is_adding_motion);
+    accept_btn->setEnabled(is_previewing && is_adding_motion);
 
     is_loading_view = false;
 }

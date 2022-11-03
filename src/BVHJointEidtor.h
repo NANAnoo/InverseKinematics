@@ -49,6 +49,8 @@ public:
 
     void setJoint(BVH::BVHJoint *node) {joint = node; loadView();}
 
+    bool isPreviewing() {return is_previewing;}
+
 private:
     enum SliderType {
         XSlider,

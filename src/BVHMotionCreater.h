@@ -25,7 +25,7 @@ public:
     BVHMotionCreater(QWidget *parent);
     void loadView();
     void setValid(bool value) {motion_create_cancel_btn->setEnabled(value);}
-
+    void motionCompleted() {is_editing = false; loadView();}
 
 signals:
     void motionStart(double interval, double fps);

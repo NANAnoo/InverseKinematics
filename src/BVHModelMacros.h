@@ -19,6 +19,9 @@ namespace BVH
 #define FLOAT_GREEN(color) (static_cast<float>((color & GREEN_COLOR) >> 16) / 255.f)
 #define FLOAT_BLUE(color) (static_cast<float>((color & BLUE_COLOR) >> 8) / 255.f)
 #define MYPI 3.1415926535f
+#define DELTA_ANGLE 0.01
+#define DAMPED_LAMBDA 0.0001
+#define MAX_STEP 50
 
 enum RenderType {
     DefaultType      = 0,
@@ -41,8 +44,8 @@ struct BVHMotionInfo
     Eigen::Vector3d *end_control;
 };
 
-typedef std::function<void(Eigen::Vector4f &bottle, Eigen::Vector4f &top, RenderType type, double radious)> boneRenderHandler;
-typedef std::function<void(Eigen::Vector4f &center, RenderType type, double radious)> jointRenderHandler;
+typedef std::function<void(Eigen::Vector4d &bottle, Eigen::Vector4d &top, RenderType type, double radious)> boneRenderHandler;
+typedef std::function<void(Eigen::Vector4d &center, RenderType type, double radious)> jointRenderHandler;
 
 // type define
 enum  ChannelEnum
