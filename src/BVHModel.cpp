@@ -270,55 +270,75 @@ Eigen::Vector4d BVHModel::jointPositionFromMotion(std::vector<double> motion, BV
 }
 
 
-void BVHModel::insertMotionFrom(unsigned int frame_ID, std::string joint_name, Eigen::Vector3d desitination, double scale)
+bool BVHModel::insertMotionFrom(unsigned int frame_ID, std::string joint_name, Eigen::Vector3d desitination, double scale)
 {
-    // get current joint
-    BVHJoint *target_joint = joint_map[joint_name], *joint = target_joint->parent;
-    if (joint == nullptr)
-        return;
-    // trace to root, find all availible control points
-    std::vector<BVHJoint *> control_joints;
-    while (joint != nullptr) {
-        // enable unlocked joints
-        if ((joint->render_type & LockedType) == 0) {
-            control_joints.push_back(joint);
-        }
-        joint = joint->parent;
-    }
+    // get target joint;
+    BVHJoint *target_joint = joint_map[joint_name];
+    if (target_joint == nullptr)
+        return false;
     std::vector<double> *base_motion = motionDataAt(frame_ID), *result_motion = nullptr;
+    // find out all locked joints:
+    std::vector<BVHJoint *> joint_stack, moved_joints;
+    std::vector<Eigen::Vector3d> desitinations;
+    joint_stack.push_back(skeleton);
+    moved_joints.push_back(target_joint);
+    desitinations.push_back(desitination);
+    while (joint_stack.size() > 0) {
+        BVHJoint *joint = joint_stack.back();
+        joint_stack.pop_back();
+        if ((joint->render_type & LockedType) > 0) {
+            moved_joints.push_back(joint);
+            // make sure locked joint position is fixed
+            Eigen::Vector4d pos = jointPositionFromMotion(*base_motion, joint, scale);
+            desitinations.push_back(Eigen::Vector3d(pos.x(), pos.y(), pos.z()));
+        }
+        for (BVHJoint *child : joint->children) {
+            joint_stack.push_back(child);
+        }
+    }
+
     base_motion = new std::vector<double>(base_motion->begin(), base_motion->end());
     double gap_length = 0;
     int step = 0;
+    bool is_accurate_enough = false;
     // update motion until reach desitination
     do {
-        result_motion = stepIKMotionFrom(control_joints, *base_motion, target_joint, desitination, scale);
-        Eigen::Vector4d result_coords = jointPositionFromMotion(*result_motion, target_joint, scale);
-        double dx = result_coords.x() - desitination.x();
-        double dy = result_coords.y() - desitination.y();
-        double dz = result_coords.z() - desitination.z();
-        gap_length = std::sqrt(dx * dx + dy * dy + dz * dz);
-        //std::cout <<"Frame " << frame_ID << " gap length : " << gap_length << std::endl;
+        result_motion = stepIKMotionFrom(moved_joints, *base_motion, desitinations, scale);
+        is_accurate_enough = true;
+        for (unsigned int i = 0; i < moved_joints.size(); i ++) {
+            Eigen::Vector4d result_coords = jointPositionFromMotion(*result_motion, moved_joints[i], scale);
+            double dx = result_coords.x() - desitinations[i].x();
+            double dy = result_coords.y() - desitinations[i].y();
+            double dz = result_coords.z() - desitinations[i].z();
+            // sum up all the gap distance
+            gap_length = std::sqrt(dx * dx + dy * dy + dz * dz);
+            is_accurate_enough = gap_length < 0.1 * scale;
+            if (!is_accurate_enough)
+                goto endloop;
+        }
+        endloop:
         delete base_motion;
         base_motion = result_motion;
         step ++;
-    } while(gap_length > 0.00001 && step < MAX_STEP);
+    } // repeat if the error is to large
+    while(!is_accurate_enough && step < MAX_STEP);
 
     motion_datas->insert(motion_datas->begin() + frame_ID + 1, result_motion);
+    return step < MAX_STEP;
 }
 
-std::vector<double> *BVHModel::stepIKMotionFrom(std::vector<BVHJoint *> &control_joints,
+std::vector<double> *BVHModel::stepIKMotionFrom(std::vector<BVHJoint *> &moved_joints,
                                                 std::vector<double> base_motion,
-                                                BVHJoint *target_joint,
-                                                Eigen::Vector3d desitination,
+                                                std::vector<Eigen::Vector3d> desitinations,
                                                 double scale)
 {
-    // base on base motion, find out the Jacobian Matrix
-    Eigen::Vector4d base_coords = jointPositionFromMotion(base_motion, target_joint, scale);
     Eigen::MatrixXd Jacobian;
-    Jacobian.resize(3, control_joints.size() * 3);
+    joint_map.erase("");
+    Jacobian.resize(moved_joints.size() * 3, joint_map.size() * 3);
     Jacobian.setZero();
     unsigned int col_index = 0;
-    for (BVHJoint *control_joint : control_joints) {
+    for (auto pair : joint_map) {
+        BVHJoint *control_joint = pair.second;
         unsigned int offset = control_joint->channel_index_offset;
         for (ChannelEnum c : control_joint->channels)
         {
@@ -326,38 +346,45 @@ std::vector<double> *BVHModel::stepIKMotionFrom(std::vector<BVHJoint *> &control
                 std::vector<double> diff_motion(base_motion.begin(), base_motion.end());
                 // add a small delta angle
                 diff_motion[offset] = diff_motion[offset] + DELTA_ANGLE;
-                // caculate the new coords at diff_motion;
-                Eigen::Vector4d diff_coords = jointPositionFromMotion(diff_motion, target_joint, scale);
-                Eigen::Vector4d delta_coords = diff_coords - base_coords;
-                // assign value to Jacobian, d_x|y|z / d_theta
-                Jacobian(0, col_index) = delta_coords.x() / DELTA_ANGLE;
-                Jacobian(1, col_index) = delta_coords.y() / DELTA_ANGLE;
-                Jacobian(2, col_index) = delta_coords.z() / DELTA_ANGLE;
+                for (unsigned int i = 0; i < moved_joints.size(); i ++) {
+                    // caculate the new coords at diff_motion;
+                    Eigen::Vector4d diff_coords = jointPositionFromMotion(diff_motion, moved_joints[i], scale);
+                    // assign value to Jacobian, d_x|y|z / d_theta
+                    Eigen::Vector4d delta_coords = diff_coords - jointPositionFromMotion(base_motion, moved_joints[i], scale);
+                    Jacobian(i * 3, col_index) = delta_coords.x() / DELTA_ANGLE;
+                    Jacobian(i * 3 + 1, col_index) = delta_coords.y() / DELTA_ANGLE;
+                    Jacobian(i * 3 + 2, col_index) = delta_coords.z() / DELTA_ANGLE;
+                }
                 col_index ++;
             }
             offset ++;
         }
-
+    }
+    // calculate delta movement of all joints
+    Eigen::MatrixXd delta_movement;
+    delta_movement.resize(3 * moved_joints.size(), 1);
+    delta_movement.setZero();
+    for (unsigned int i = 0; i < moved_joints.size(); i ++) {
+        Eigen::Vector4d base_coords = jointPositionFromMotion(base_motion, moved_joints[i], scale);
+        delta_movement(i * 3, 0) = desitinations[i].x() - base_coords.x();
+        delta_movement(i * 3 + 1, 0) = desitinations[i].y() - base_coords.y();
+        delta_movement(i * 3 + 2, 0) = desitinations[i].z() - base_coords.z();
     }
 
-    // calculate delta movement
-    Eigen::Vector3d delta_movement(desitination.x() - base_coords.x(),
-                                   desitination.y() - base_coords.y(),
-                                   desitination.z() - base_coords.z());
     // damped IK
     // J * delta_theta = delta_movement
     // J_+ = J_T * inv(J_T * J + lamda^2 * I);
     // J_+ * delta_movement = delta_theta
     Eigen::MatrixXd Jacobian_T = Jacobian.transpose();
     Eigen::MatrixXd I;
-    I.resize(3, 3);
+    I.resize(3 * moved_joints.size(), 3 * moved_joints.size());
     I.setIdentity();
     Eigen::MatrixXd Jacobian_prime = Jacobian_T * (Jacobian * Jacobian_T + I * (DAMPED_LAMBDA * DAMPED_LAMBDA)).inverse();
     Eigen::MatrixXd delta_theta = Jacobian_prime * delta_movement;
-    // build motion data base on delta_theta
     unsigned int raw_index = 0;
     std::vector<double> *result_motion = new std::vector<double>(base_motion.begin(), base_motion.end());
-    for (BVHJoint *control_joint : control_joints) {
+    for (auto pair : joint_map) {
+        BVHJoint *control_joint = pair.second;
         unsigned int offset = control_joint->channel_index_offset;
         for (ChannelEnum c : control_joint->channels)
         {

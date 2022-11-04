@@ -59,7 +59,7 @@ public slots:
 
     // From joint editor
     void receivedMotionData(BVHJointEidtor::EditedValueType type, int x, int y, int z, int w);
-    void startPreviewMotion();
+    bool startPreviewMotion();
     void stopPreviewMotion();
     void insertMotion();
     double getMotionValueAtIndex(unsigned int index);

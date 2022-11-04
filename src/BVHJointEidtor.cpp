@@ -1,6 +1,7 @@
 #include "BVHJointEidtor.h"
 
 #include <QRadioButton>
+#include <QMessageBox>
 
 BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
 {
@@ -130,8 +131,16 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     preview_btn->connect(preview_btn, &QPushButton::released, [=](){
         // start or stoppreview
         is_previewing = !is_previewing;
+        if (is_previewing) {
+            if (!emit previewStarted()) {
+                // fail
+                is_previewing = false;
+                QMessageBox::critical(this, "Motion Information", "Motion generation failed");
+            }
+        } else {
+            emit previewEnded();
+         }
         loadView();
-        is_previewing ? emit previewStarted() : emit previewEnded();
     });
     accept_btn->connect(accept_btn, &QPushButton::released, [=](){
         is_previewing = false;

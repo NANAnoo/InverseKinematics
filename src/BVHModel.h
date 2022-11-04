@@ -57,7 +57,7 @@ public:
     }
 
     // use IK, insert a new motion that moves the joint to a point from any frame
-    void insertMotionFrom(unsigned int frame_ID, std::string joint_name, Eigen::Vector3d desitination, double scale);
+    bool insertMotionFrom(unsigned int frame_ID, std::string joint_name, Eigen::Vector3d desitination, double scale);
 
     void insertMotionDataFrom(unsigned int frame_ID, std::vector<double> *data) {
         motion_datas->insert(motion_datas->begin() + frame_ID + 1, data);
@@ -112,11 +112,10 @@ private:
     // get joint position with a motion data
     Eigen::Vector4d jointPositionFromMotion(std::vector<double> motion, BVHJoint *joint, double scale);
     // IK step:
-    std::vector<double> *stepIKMotionFrom(std::vector<BVHJoint *> &control_joints,
-                                          std::vector<double> base_motion,
-                                          BVHJoint *target_joint,
-                                          Eigen::Vector3d desitination,
-                                          double scale);
+    std::vector<double> *stepIKMotionFrom(std::vector<BVHJoint *> &moved_joints,
+                                                    std::vector<double> base_motion,
+                                                    std::vector<Eigen::Vector3d> desitinations,
+                                                    double scale);
 };
 
 

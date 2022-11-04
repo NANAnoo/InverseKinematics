@@ -110,7 +110,7 @@ void RenderWindowController::renderFrameAt(unsigned int frame_ID)
                 glColor3f(1, 0.5, 0);
                 glBegin(GL_LINE_STRIP);
                 // glVertex3f(centor.x(), centor.y(), centor.z());
-                curve->forEach([](Eigen::Vector3d point, unsigned int) {
+                curve->forEach([](Eigen::Vector3d point, unsigned int, bool &) {
                     glVertex3f(point.x(), point.y(), point.z());
                 });
                 glEnd();
@@ -236,23 +236,31 @@ void RenderWindowController::receivedMotionData(BVHJointEidtor::EditedValueType 
         s_last_receive_time = cur_time;
     }
 }
-void RenderWindowController::startPreviewMotion()
+bool RenderWindowController::startPreviewMotion()
 {
     if (curve->getEnabled()) {
         // calculate motion data from bezier curve with IK, insert into editing model
         unsigned int frame_id = 0;
-        curve->forEach([&](Eigen::Vector3d mid_point, unsigned int index){
+        bool is_success = true;
+        curve->forEach([&](Eigen::Vector3d mid_point, unsigned int index, bool &stop){
             if (index > 0) {
-                editing_model->insertMotionFrom(frame_id, window->joint_viewer->getSelectedJointName(), mid_point, 0.3);
+                is_success = editing_model->insertMotionFrom(frame_id, window->joint_viewer->getSelectedJointName(), mid_point, 0.3);
+                stop = !is_success;
                 frame_id ++;
             }
         });
+        if (!is_success) {
+            stopPreviewMotion();
+            return false;
+        }
         // enable play bar
         window->play_bar->setFrameCount(editing_model->allFrameCount());
         window->play_bar->setValid(true);
         // disable joint select change
         window->joint_viewer->setEnabled(false);
+        return true;
     }
+    return false;
 }
 void RenderWindowController::stopPreviewMotion()
 {

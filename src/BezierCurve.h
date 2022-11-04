@@ -80,13 +80,17 @@ public:
         }
     }
 
-    void forEach(std::function<void(Eigen::Vector3d prev, unsigned int i)> callback)
+    void forEach(std::function<void(Eigen::Vector3d prev, unsigned int i, bool &stop)> callback)
     {
         if (!generated) {
             generate();
         }
+        bool stop = false;
         for (unsigned int i = 0; i < piecewise_size; i ++) {
-            callback(curve_points[i], i);
+            callback(curve_points[i], i, stop);
+            if (stop) {
+                return;
+            }
         }
     }
 

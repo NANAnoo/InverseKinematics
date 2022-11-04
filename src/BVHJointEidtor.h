@@ -106,7 +106,7 @@ private:
 signals:
     void editDataChanged(EditedValueType type, int x, int y, int z, int w);
     // preview clicked
-    void previewStarted();
+    bool previewStarted();
     // stop preview
     void previewEnded();
     // accept current motion

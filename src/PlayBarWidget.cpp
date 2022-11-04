@@ -174,19 +174,11 @@ void PlayBarWidget::resetPlay()
 }
 void PlayBarWidget::nextFrame()
 {
-    if (current_frame < max_frame)
-    {
-        // enable speed up
-        updateFrame(current_frame + 1);
-    }
+    updateFrame(current_frame % max_frame + 1);
     // do nothing
 }
 void PlayBarWidget::previousFrame()
 {
-    if (current_frame > 1)
-    {
-        // enable play back
-        updateFrame(current_frame - 1);
-    }
+    updateFrame(current_frame > 1 ? current_frame - 1 : max_frame);
     // do nothing
 }

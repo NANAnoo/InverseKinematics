@@ -15,19 +15,15 @@ ROOT K0
             {
                 OFFSET 0.000000 10.000000 0.000000
                 CHANNELS 3 Zrotation Yrotation Xrotation
-                End Site
-                        {
-                            OFFSET 0.000000 0.000000 5.000000
-                        }
-            }
-            JOINT K4
-            {
-                OFFSET 0.000000 -10.000000 0.000000
-                CHANNELS 3 Zrotation Yrotation Xrotation
-                End Site
-                        {
-                            OFFSET 0.000000 0.000000 -5.000000
-                        }
+                JOINT K4
+                {
+                    OFFSET -5.000000 0.000000 0.000000
+                    CHANNELS 3 Zrotation Yrotation Xrotation
+                    End Site
+                            {
+                                OFFSET 0.000000 0.000000 -5.000000
+                            }
+                }
             }
         }
     }
