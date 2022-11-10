@@ -257,7 +257,7 @@ bool RenderWindowController::startPreviewMotion()
         window->play_bar->setFrameCount(editing_model->allFrameCount());
         window->play_bar->setValid(true);
         // disable joint select change
-        window->joint_viewer->setEnabled(false);
+        window->joint_viewer->setValid(false);
         return true;
     }
     return false;
@@ -269,7 +269,7 @@ void RenderWindowController::stopPreviewMotion()
     window->play_bar->setFrameCount(editing_model->allFrameCount());
     window->play_bar->setValid(false);
     // enable joint select change
-    window->joint_viewer->setEnabled(true);
+    window->joint_viewer->setValid(true);
 }
 void RenderWindowController::insertMotion()
 {
@@ -289,6 +289,7 @@ void RenderWindowController::insertMotion()
     window->play_bar->setFrameCount(current_model->allFrameCount());
     window->play_bar->setFrameDuation(current_model->frame_duration);
     window->play_bar->setValid(true);
+    window->joint_viewer->setValid(true);
     window->motion_creator->motionCompleted();
 }
 double RenderWindowController::getMotionValueAtIndex(unsigned int index)

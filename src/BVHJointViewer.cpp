@@ -48,6 +48,11 @@ void BVHJointViewer::updateViewWith(std::vector<BVH::BVHMetaNode> nodes)
     treeViwer->expandAll();
 }
 
+void BVHJointViewer::setValid(bool valid)
+{
+    treeViwer->setEnabled(valid);
+}
+
 void BVHJointViewer::handleSelectEvent(QTreeWidgetItem *item, int column)
 {
     if (column == 0) {
