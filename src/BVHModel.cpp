@@ -70,6 +70,7 @@ BVHModel::BVHModel(const std::string filename)
             new_joint->site[2] = 0.0;
             new_joint->channel_index_offset = channel_num;
             new_joint->render_type = BVH::DefaultType;
+            new_joint->site_render_type = BVH::DefaultType;
             if (joint)
                 joint->children.push_back(new_joint);
             else
@@ -212,15 +213,22 @@ BVHModel::BVHModel(const std::string filename)
 // get position of a joint
 Eigen::Vector4d BVHModel::jointPositionAt(unsigned int frame_ID, const std::string joint_name, double scale)
 {
-    return jointPositionFromMotion(*motionDataAt(frame_ID), joint_map[joint_name], scale);
+    return jointPositionFromMotion(*motionDataAt(frame_ID), joint_name, scale);
 }
 
 
-Eigen::Vector4d BVHModel::jointPositionFromMotion(std::vector<double> motion, BVHJoint *joint, double scale)
+Eigen::Vector4d BVHModel::jointPositionFromMotion(std::vector<double> motion, std::string joint_name, double scale)
 {
     Eigen::Vector4d coords(0, 0, 0, 1);
     Eigen::Matrix4d transition = Eigen::Matrix4d::Identity();
+    bool is_site = false;
     // do FK until joint
+    BVHJoint *joint = getJointFromName(joint_name, is_site);
+    if (is_site) {
+        coords.x() = joint->site[0] * scale;
+        coords.y() = joint->site[1] * scale;
+        coords.z() = joint->site[2] * scale;
+    }
     while (joint != nullptr)
     {
         double ax = 0, ay = 0, az = 0, x = 0, y = 0, z = 0;
@@ -266,30 +274,31 @@ Eigen::Vector4d BVHModel::jointPositionFromMotion(std::vector<double> motion, BV
                      getRotationMatrix(X_ROTATION, ax) * transition;
         joint = joint->parent;
     }
+    if (is_site) {
+        std::cout << transition << std::endl;
+    }
     return transition * coords;
 }
 
 
 bool BVHModel::insertMotionFrom(unsigned int frame_ID, std::string joint_name, Eigen::Vector3d desitination, double scale)
 {
-    // get target joint;
-    BVHJoint *target_joint = joint_map[joint_name];
-    if (target_joint == nullptr)
-        return false;
+    // get target joint
     std::vector<double> *base_motion = motionDataAt(frame_ID), *result_motion = nullptr;
     // find out all locked joints:
-    std::vector<BVHJoint *> joint_stack, moved_joints;
+    std::vector<BVHJoint *> joint_stack;
+    std::vector<std::string> moved_joints;
     std::vector<Eigen::Vector3d> desitinations;
     joint_stack.push_back(skeleton);
-    moved_joints.push_back(target_joint);
+    moved_joints.push_back(joint_name);
     desitinations.push_back(desitination);
     while (joint_stack.size() > 0) {
         BVHJoint *joint = joint_stack.back();
         joint_stack.pop_back();
         if ((joint->render_type & LockedType) > 0) {
-            moved_joints.push_back(joint);
+            moved_joints.push_back(joint->name);
             // make sure locked joint position is fixed
-            Eigen::Vector4d pos = jointPositionFromMotion(*base_motion, joint, scale);
+            Eigen::Vector4d pos = jointPositionFromMotion(*base_motion, joint->name, scale);
             desitinations.push_back(Eigen::Vector3d(pos.x(), pos.y(), pos.z()));
         }
         for (BVHJoint *child : joint->children) {
@@ -327,7 +336,7 @@ bool BVHModel::insertMotionFrom(unsigned int frame_ID, std::string joint_name, E
     return step < MAX_STEP;
 }
 
-std::vector<double> *BVHModel::stepIKMotionFrom(std::vector<BVHJoint *> &moved_joints,
+std::vector<double> *BVHModel::stepIKMotionFrom(std::vector<std::string> &moved_joints,
                                                 std::vector<double> base_motion,
                                                 std::vector<Eigen::Vector3d> desitinations,
                                                 double scale)
@@ -467,7 +476,9 @@ void BVHModel::renderJoint(BVHJoint *joint,
         // render site bone;
         Eigen::Vector4d site_end(joint->site[0] * scale, joint->site[1] * scale, joint->site[2] * scale, 1);
         site_end = transition * site_end;
+        cout << "R: "<< transition << endl;
         boneRender(joint_center, site_end, joint->render_type, scale);
+        jointRender(site_end, joint->site_render_type, scale);
     }
     else if ((joint->children.size() == 1))
     {
@@ -659,6 +670,10 @@ void BVHModel::getMetaInfoFrom(BVHJoint *node, std::vector<BVH::BVHMetaNode> &li
 {
     if (node) {
         list.push_back(BVH::BVHMetaNode({node->name, node->parent == nullptr ? "" : node->parent->name, depth}));
+        if (node->has_site) {
+            std::string end_name = node->name + ".end";
+            list.push_back(BVH::BVHMetaNode({end_name, node->name, depth}));
+        }
         for (BVHJoint *child : node->children) {
             getMetaInfoFrom(child, list, depth + 1);
         }

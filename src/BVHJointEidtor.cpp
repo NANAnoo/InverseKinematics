@@ -153,16 +153,11 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
 void BVHJointEidtor::loadView()
 {
     is_loading_view = true;
-    char buffer[50];
     if (joint == nullptr) {
         this->joint_detial->setText("Unknown Joint");
     } else {
         // setup information, name $(is_locked) $(is_site)
-        std::snprintf(buffer, 50, "%s%s %s",
-                      joint->name.c_str(),
-                      (joint->render_type & BVH::LockedType) > 0 ? " locked" : "",
-                      joint->has_site ? "(site)" : "");
-        this->joint_detial->setText(buffer);
+        this->joint_detial->setText(joint->name.c_str());
     }
     double x = 0, y = 0, z = 0, w = 1;
     switch (type) {

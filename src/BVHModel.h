@@ -33,7 +33,16 @@ public:
     // get position of a joint
     Eigen::Vector4d jointPositionAt(unsigned int frame_ID, const std::string joint_name, double scale);
     // get the joint from name
-    BVHJoint *getJointFromName(const std::string joint_name) {return joint_map[joint_name];}
+    BVHJoint *getJointFromName(std::string joint_name, bool &is_site) {
+        if (joint_name.substr(joint_name.find_last_of('.')+ 1) == "end")
+        {
+            // check site
+            joint_name = joint_name.substr(0, joint_name.find_last_of('.'));
+            is_site = true;
+        }
+        auto p = joint_map.find(joint_name);
+        return p == joint_map.end() ? nullptr : p->second;
+    }
 
     // render skeleton
     void renderModelWith(BVH::boneRenderHandler boneRender, BVH::jointRenderHandler jointRender, unsigned int frame_ID, double scale);
@@ -110,9 +119,9 @@ private:
     // get all joints info
     void getMetaInfoFrom(BVHJoint *node, std::vector<BVH::BVHMetaNode> &list, unsigned int depth);
     // get joint position with a motion data
-    Eigen::Vector4d jointPositionFromMotion(std::vector<double> motion, BVHJoint *joint, double scale);
+    Eigen::Vector4d jointPositionFromMotion(std::vector<double> motion, std::string joint_name, double scale);
     // IK step:
-    std::vector<double> *stepIKMotionFrom(std::vector<BVHJoint *> &moved_joints,
+    std::vector<double> *stepIKMotionFrom(std::vector<std::string> &moved_joints,
                                                     std::vector<double> base_motion,
                                                     std::vector<Eigen::Vector3d> desitinations,
                                                     double scale);

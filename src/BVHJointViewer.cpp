@@ -26,6 +26,7 @@ void BVHJointViewer::updateViewWith(std::vector<BVH::BVHMetaNode> nodes)
 {
     // node map
     treeViwer->clear();
+    selected_joint.clear();
     std::map<std::string, QTreeWidgetItem *> items;
     for (BVH::BVHMetaNode node : nodes) {
         std::string name = node.name;

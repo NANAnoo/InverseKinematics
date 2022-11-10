@@ -35,14 +35,6 @@ struct BVHMetaNode
     std::string parent;
     unsigned int level;
 };
-struct BVHMotionInfo
-{
-    std::string joint_name;
-    Eigen::Vector3d *begin;
-    Eigen::Vector3d *end;
-    Eigen::Vector3d *begin_control;
-    Eigen::Vector3d *end_control;
-};
 
 typedef std::function<void(Eigen::Vector4d &bottle, Eigen::Vector4d &top, RenderType type, double radious)> boneRenderHandler;
 typedef std::function<void(Eigen::Vector4d &center, RenderType type, double radious)> jointRenderHandler;
@@ -73,6 +65,16 @@ struct BVHJoint
     unsigned int                channel_index_offset;
     // render size
     BVH::RenderType render_type;
+    BVH::RenderType site_render_type;
+};
+
+struct BVHJointDisplayInfo
+{
+    double offset[3];
+    std::vector<ChannelEnum> channels;
+    std::string name;
+    unsigned int channel_index_offset;
+    bool is_end;
 };
 
 };

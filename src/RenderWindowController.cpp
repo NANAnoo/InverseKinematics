@@ -130,16 +130,35 @@ void RenderWindowController::renderFrameAt(unsigned int frame_ID)
 void RenderWindowController::selectedNode(std::string node_name)
 {
     BVHModel *model = is_editing ? editing_model : current_model;
-    BVH::BVHJoint *joint = model->getJointFromName(node_name);
+    bool is_site = false;
+    BVH::BVHJoint *joint = model->getJointFromName(node_name, is_site);
     // update color
     if (joint != nullptr) {
-        BVH::BVHJoint *previous_joint = model->getJointFromName(previous_selected_joint);
+        bool previous_is_site = false;
+        BVH::BVHJoint *previous_joint = model->getJointFromName(previous_selected_joint, previous_is_site);
         if (previous_joint != nullptr) {
-            previous_joint->render_type = static_cast<BVH::RenderType>(previous_joint->render_type - BVH::SelectedType);
+            if (previous_is_site) {
+                previous_joint->site_render_type = static_cast<BVH::RenderType>(previous_joint->site_render_type & ~BVH::SelectedType);
+            } else {
+                previous_joint->render_type = static_cast<BVH::RenderType>(previous_joint->render_type & ~BVH::SelectedType);
+            }
         }
-        joint->render_type = static_cast<BVH::RenderType>(joint->render_type | BVH::SelectedType);
+        if (is_site) {
+            joint->site_render_type = static_cast<BVH::RenderType>(joint->site_render_type | BVH::SelectedType);
+        } else {
+            joint->render_type = static_cast<BVH::RenderType>(joint->render_type | BVH::SelectedType);
+        }
         previous_selected_joint = node_name;
-        window->joint_editor->setJoint(joint);
+        // build info for display
+        BVHJointDisplayInfo *info = new BVHJointDisplayInfo();
+        info->is_end = is_site;
+        info->name = node_name;
+        info->channel_index_offset = joint->channel_index_offset;
+        for (int i = 0; i < 3; i ++) {
+            info->offset[i] = joint->offset[i];
+            info->channels.push_back(joint->channels[i]);
+        }
+        window->joint_editor->setJointInfo(info);
         if (curve->getEnabled()) {
             Eigen::Vector4d position = model->jointPositionAt(window->play_bar->getCurrentFrame() - 1, node_name, 0.3);
             curve->setStart(position.x(), position.y(), position.z());
@@ -152,13 +171,14 @@ void RenderWindowController::selectedNode(std::string node_name)
 void RenderWindowController::lockedNode(std::string node_name, bool locked)
 {
     BVHModel *model = is_editing ? editing_model : current_model;
-    BVH::BVHJoint *joint = model->getJointFromName(node_name);
+    bool is_site = false;
+    BVH::BVHJoint *joint = model->getJointFromName(node_name, is_site);
     // update color
     if (joint != nullptr) {
         if (locked) {
             joint->render_type = static_cast<BVH::RenderType>(joint->render_type | BVH::LockedType);
         } else {
-            joint->render_type = static_cast<BVH::RenderType>(joint->render_type - BVH::LockedType);
+            joint->render_type = static_cast<BVH::RenderType>(joint->render_type & ~BVH::LockedType);
         }
     }
     window->play_bar->reloadCurrentFrameIfStopped();

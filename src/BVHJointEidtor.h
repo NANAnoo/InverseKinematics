@@ -47,7 +47,7 @@ public:
         loadView();
     }
 
-    void setJoint(BVH::BVHJoint *node) {joint = node; loadView();}
+    void setJointInfo(BVH::BVHJointDisplayInfo *node) {joint = node; loadView();}
 
     bool isPreviewing() {return is_previewing;}
 
@@ -85,7 +85,7 @@ private:
     QPushButton *accept_btn;
 
     // displayed joint
-    BVH::BVHJoint *joint;
+    BVH::BVHJointDisplayInfo *joint;
 
     // control info
     MotionControlInfo motion_info;
