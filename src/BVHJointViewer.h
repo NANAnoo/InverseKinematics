@@ -22,6 +22,8 @@ public:
 
     std::string getSelectedJointName() {return selected_joint;}
 
+    void setValid(bool valid);
+
 signals:
     void selectedNodeChanged(std::string node_name);
     void lockedNodeChanged(std::string node_name, bool locked);
