@@ -8,7 +8,7 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     // initial all properties
     joint = nullptr;
     // init labels
-    for (QLabel **label : {&joint_detial, &x_silder_label, &y_silder_label, &z_silder_label, &w_silder_label}) {
+    for (QLabel **label : {&joint_detial, &x_silder_label, &y_silder_label, &z_silder_label, &w_silder_label, &control_silder_label}) {
         *label = new QLabel(this);
         (*label)->setAlignment(Qt::AlignCenter);
     }
@@ -16,11 +16,17 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     // init silders
     for (QSlider **slider : {&x_silder, &y_silder, &z_silder, &w_silder}) {
         *slider = new QSlider(this);
-        (*slider)->setMinimum(200);
+        (*slider)->setMaximum(200);
         (*slider)->setMinimum(1);
         (*slider)->setTickInterval(1);
         (*slider)->setSliderPosition(0);
     }
+    control_silder = new QSlider(this);
+    control_silder->setMaximum(100);
+    control_silder->setMinimum(0);
+    control_silder->setTickInterval(1);
+    control_silder->setSliderPosition(0);
+    control_silder->setOrientation(Qt::Horizontal);
 
     // translation  / rotation;
     silder_mode_group = new QButtonGroup(this);
@@ -74,20 +80,23 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     // left side
     width = this->width() / 3 * 2;
     height = this->height() / 9 * 8;
-    x_silder->setGeometry(5, height / 8 + 5, width / 4 - 10, height / 8 * 7 - 5);
-    y_silder->setGeometry(width / 4 + 5, height / 8 + 5, width / 4 - 10, height / 8 * 7 - 5);
-    z_silder->setGeometry(width / 2 + 5, height / 8 + 5, width / 4 - 10, height / 8 * 7 - 5);
-    w_silder->setGeometry(width / 4 * 3 + 5, height / 8 + 5, width / 4 - 10, height / 8 * 7 - 5);
+    x_silder->setGeometry(5, height / 4 + 5, width / 4 - 10, height / 4 * 3 - 5);
+    y_silder->setGeometry(width / 4 + 5, height / 4 + 5, width / 4 - 10, height / 4 * 3 - 5);
+    z_silder->setGeometry(width / 2 + 5, height / 4 + 5, width / 4 - 10, height / 4 * 3 - 5);
+    w_silder->setGeometry(width / 4 * 3 + 5, height / 4 + 5, width / 4 - 10, height / 4 * 3 - 5);
+    control_silder->setGeometry(width / 8, height / 32 * 5 , width / 4 * 3 - 10, height / 16);
     x_silder_label->setGeometry(0, height, width / 4, height / 8);
     y_silder_label->setGeometry(width / 4, height, width / 4, height / 8);
     z_silder_label->setGeometry(width / 2, height, width / 4, height / 8);
     w_silder_label->setGeometry(width / 4 * 3, height, width / 4, height / 8);
+    control_silder_label->setGeometry(width / 4 * 3 + 5, height / 8 + 5, width / 4 * 3 - 10, height / 10);
+    control_silder_label->setText("Weight:");
     // right side
     width = this->width() / 3;
     int x = width * 2 + 10;
     int height_from = height / 8;
-    trasilation_btn->setGeometry(x, height_from + height / 16, width - 20, height / 16);
-    rotation_btn->setGeometry(x, height_from + height / 16 * 2, width - 20, height / 16);
+    trasilation_btn->setGeometry(x, height_from + height / 16 * 2, width - 20, height / 16);
+    rotation_btn->setGeometry(x, height_from + height / 16 * 3, width - 20, height / 16);
     desitination_btn->setGeometry(x, height_from + height / 16 * 6, width - 20, height / 16);
     begin_control_btn->setGeometry(x, height_from + height / 16 * 8, width - 20, height / 16);
     end_control_btn->setGeometry(x, height_from + height / 16 * 10, width - 20, height / 16);
@@ -110,6 +119,12 @@ BVHJointEidtor::BVHJointEidtor(QWidget *parent) : QWidget(parent)
     w_silder->connect(w_silder, &QSlider::valueChanged, [=](int value){
         if (!is_loading_view)
             this->sliderdataChanged(WSlider, getValueFromSlider(w_silder, value));
+    });
+    control_silder->connect(control_silder, &QSlider::valueChanged, [=](int value) {
+        if (joint != nullptr) {
+            jointWeightChanged(joint->name, static_cast<double>(value) / 100);
+            setSliderText(CSlider, static_cast<double>(value) / 100);
+        }
     });
     trasilation_btn->connect(trasilation_btn, &QRadioButton::toggled, [=](bool){
         this->type = JointTranslationType;
@@ -217,6 +232,9 @@ void BVHJointEidtor::loadView()
     y_silder->setSliderPosition(static_cast<int>(y + 100));
     z_silder->setSliderPosition(static_cast<int>(z + 100));
     w_silder->setSliderPosition(static_cast<int>(w + 100));
+    control_silder->setSliderPosition(joint == nullptr ? 0 : static_cast<int>(joint->weight * 100));
+    setSliderText(CSlider, joint == nullptr ? 0 : joint->weight);
+
     // set up labels
     setSliderText(XSlider, x);
     setSliderText(YSlider, y);
@@ -230,8 +248,13 @@ void BVHJointEidtor::loadView()
     y_silder->setEnabled(!is_previewing && is_adding_motion);
     z_silder->setEnabled(!is_previewing && is_adding_motion);
     w_silder->setEnabled(!is_previewing && is_adding_motion);
+    control_silder->setEnabled(!is_previewing && joint != nullptr && !joint->is_end);
+
     for(QAbstractButton* button : silder_mode_group->buttons()){
         button->setEnabled(!is_previewing && !is_adding_motion);
+        if (joint && button->text() == "rotation" && joint->is_end) {
+            button->setEnabled(false);
+        }
     }
     for(QAbstractButton* button : motion_control_group->buttons()){
         button->setEnabled(!is_previewing && is_adding_motion);
@@ -262,6 +285,10 @@ void BVHJointEidtor::setSliderText(SliderType type, double value)
         case WSlider:
             std::snprintf(buffer, 20, "W \n %.2f", value);
             w_silder_label->setText(buffer);
+            break;
+        case CSlider:
+            std::snprintf(buffer, 20, "Weight: %.2f", value);
+            control_silder_label->setText(buffer);
             break;
     };
 }

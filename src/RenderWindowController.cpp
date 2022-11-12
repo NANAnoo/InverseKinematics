@@ -42,6 +42,8 @@ void RenderWindowController::setup()
                      this, &RenderWindowController::stopPreviewMotion);
     QObject::connect(window->joint_editor, &BVHJointEidtor::motionAccepted,
                      this, &RenderWindowController::insertMotion);
+    QObject::connect(window->joint_editor, &BVHJointEidtor::jointWeightChanged,
+                     this, &RenderWindowController::changeJointWeight);
 }
 
 // From File Picker
@@ -154,9 +156,10 @@ void RenderWindowController::selectedNode(std::string node_name)
         info->is_end = is_site;
         info->name = node_name;
         info->channel_index_offset = joint->channel_index_offset;
+        info->channels.assign(joint->channels.begin(), joint->channels.end());
+        info->weight = joint->weight;
         for (int i = 0; i < 3; i ++) {
             info->offset[i] = joint->offset[i];
-            info->channels.push_back(joint->channels[i]);
         }
         window->joint_editor->setJointInfo(info);
         if (curve->getEnabled()) {
@@ -176,9 +179,17 @@ void RenderWindowController::lockedNode(std::string node_name, bool locked)
     // update color
     if (joint != nullptr) {
         if (locked) {
-            joint->render_type = static_cast<BVH::RenderType>(joint->render_type | BVH::LockedType);
+            if (is_site) {
+                joint->site_render_type = static_cast<BVH::RenderType>(joint->render_type | BVH::LockedType);
+            } else {
+                joint->render_type = static_cast<BVH::RenderType>(joint->render_type | BVH::LockedType);
+            }
         } else {
-            joint->render_type = static_cast<BVH::RenderType>(joint->render_type & ~BVH::LockedType);
+            if (is_site) {
+                joint->site_render_type = static_cast<BVH::RenderType>(joint->render_type & ~BVH::LockedType);
+            } else {
+                joint->render_type = static_cast<BVH::RenderType>(joint->render_type & ~BVH::LockedType);
+            }
         }
     }
     window->play_bar->reloadCurrentFrameIfStopped();
@@ -231,6 +242,14 @@ void RenderWindowController::cancelMotion()
 }
 
 // From joint editor
+void RenderWindowController::changeJointWeight(std::string joint_name, double value)
+{
+    BVHModel *model = is_editing ? editing_model : current_model;
+    bool is_end = false;
+    BVHJoint *joint = model->getJointFromName(joint_name, is_end);
+    joint->weight = value;
+}
+
 static time_t s_last_receive_time = 0;
 void RenderWindowController::receivedMotionData(BVHJointEidtor::EditedValueType type, int x, int y, int z, int w)
 {

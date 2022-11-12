@@ -71,6 +71,7 @@ BVHModel::BVHModel(const std::string filename)
             new_joint->channel_index_offset = channel_num;
             new_joint->render_type = BVH::DefaultType;
             new_joint->site_render_type = BVH::DefaultType;
+            new_joint->weight = 0;
             if (joint)
                 joint->children.push_back(new_joint);
             else
@@ -274,9 +275,6 @@ Eigen::Vector4d BVHModel::jointPositionFromMotion(std::vector<double> motion, st
                      getRotationMatrix(X_ROTATION, ax) * transition;
         joint = joint->parent;
     }
-    if (is_site) {
-        std::cout << transition << std::endl;
-    }
     return transition * coords;
 }
 
@@ -299,6 +297,11 @@ bool BVHModel::insertMotionFrom(unsigned int frame_ID, std::string joint_name, E
             moved_joints.push_back(joint->name);
             // make sure locked joint position is fixed
             Eigen::Vector4d pos = jointPositionFromMotion(*base_motion, joint->name, scale);
+            desitinations.push_back(Eigen::Vector3d(pos.x(), pos.y(), pos.z()));
+        } if ((joint->site_render_type & LockedType) > 0) {
+            std::string site_name = joint->name + ".end";
+            moved_joints.push_back(site_name);
+            Eigen::Vector4d pos = jointPositionFromMotion(*base_motion, site_name, scale);
             desitinations.push_back(Eigen::Vector3d(pos.x(), pos.y(), pos.z()));
         }
         for (BVHJoint *child : joint->children) {
@@ -341,9 +344,9 @@ std::vector<double> *BVHModel::stepIKMotionFrom(std::vector<std::string> &moved_
                                                 std::vector<Eigen::Vector3d> desitinations,
                                                 double scale)
 {
-    Eigen::MatrixXd Jacobian;
-    joint_map.erase("");
+    Eigen::MatrixXd Jacobian, weights_z;
     Jacobian.resize(moved_joints.size() * 3, joint_map.size() * 3);
+    weights_z.resize(joint_map.size() * 3, 1);
     Jacobian.setZero();
     unsigned int col_index = 0;
     for (auto pair : joint_map) {
@@ -364,11 +367,13 @@ std::vector<double> *BVHModel::stepIKMotionFrom(std::vector<std::string> &moved_
                     Jacobian(i * 3 + 1, col_index) = delta_coords.y() / DELTA_ANGLE;
                     Jacobian(i * 3 + 2, col_index) = delta_coords.z() / DELTA_ANGLE;
                 }
+                weights_z(col_index) = control_joint->weight;
                 col_index ++;
             }
             offset ++;
         }
     }
+
     // calculate delta movement of all joints
     Eigen::MatrixXd delta_movement;
     delta_movement.resize(3 * moved_joints.size(), 1);
@@ -384,12 +389,14 @@ std::vector<double> *BVHModel::stepIKMotionFrom(std::vector<std::string> &moved_
     // J * delta_theta = delta_movement
     // J_+ = J_T * inv(J_T * J + lamda^2 * I);
     // J_+ * delta_movement = delta_theta
+    // with control
+    // delta_theta = J_+ * (delta_movement + J * z) - z
     Eigen::MatrixXd Jacobian_T = Jacobian.transpose();
     Eigen::MatrixXd I;
     I.resize(3 * moved_joints.size(), 3 * moved_joints.size());
     I.setIdentity();
     Eigen::MatrixXd Jacobian_prime = Jacobian_T * (Jacobian * Jacobian_T + I * (DAMPED_LAMBDA * DAMPED_LAMBDA)).inverse();
-    Eigen::MatrixXd delta_theta = Jacobian_prime * delta_movement;
+    Eigen::MatrixXd delta_theta = Jacobian_prime * (delta_movement + Jacobian * weights_z) - weights_z;
     unsigned int raw_index = 0;
     std::vector<double> *result_motion = new std::vector<double>(base_motion.begin(), base_motion.end());
     for (auto pair : joint_map) {
@@ -476,7 +483,6 @@ void BVHModel::renderJoint(BVHJoint *joint,
         // render site bone;
         Eigen::Vector4d site_end(joint->site[0] * scale, joint->site[1] * scale, joint->site[2] * scale, 1);
         site_end = transition * site_end;
-        cout << "R: "<< transition << endl;
         boneRender(joint_center, site_end, joint->render_type, scale);
         jointRender(site_end, joint->site_render_type, scale);
     }

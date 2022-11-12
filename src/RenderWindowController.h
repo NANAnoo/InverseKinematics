@@ -58,6 +58,7 @@ public slots:
     void cancelMotion();
 
     // From joint editor
+    void changeJointWeight(std::string joint_name, double value);
     void receivedMotionData(BVHJointEidtor::EditedValueType type, int x, int y, int z, int w);
     bool startPreviewMotion();
     void stopPreviewMotion();

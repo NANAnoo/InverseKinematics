@@ -47,7 +47,7 @@ public:
         loadView();
     }
 
-    void setJointInfo(BVH::BVHJointDisplayInfo *node) {joint = node; loadView();}
+    void setJointInfo(BVH::BVHJointDisplayInfo *node) {joint = node; if (joint->is_end && !is_adding_motion) type = JointTranslationType; loadView();}
 
     bool isPreviewing() {return is_previewing;}
 
@@ -56,7 +56,8 @@ private:
         XSlider,
         YSlider,
         ZSlider,
-        WSlider
+        WSlider,
+        CSlider
     };
     struct MotionControlInfo
     {
@@ -75,6 +76,8 @@ private:
     QLabel *z_silder_label;
     QSlider *w_silder;
     QLabel *w_silder_label;
+    QSlider *control_silder;
+    QLabel *control_silder_label;
     // translation  / rotation;
     QButtonGroup *silder_mode_group;
     // motion control
@@ -104,6 +107,7 @@ private:
     void setSliderText(SliderType type, double value);
 
 signals:
+    void jointWeightChanged(std::string joint_name, double value);
     void editDataChanged(EditedValueType type, int x, int y, int z, int w);
     // preview clicked
     bool previewStarted();

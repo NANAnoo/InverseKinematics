@@ -51,26 +51,28 @@ struct BVHJoint
     // is end joint?
     bool                        has_site;
     // offset and site data
-    double                       offset[3];
-    double                       site[3];
+    double                      offset[3];
+    double                      site[3];
+    double                      weight;
     // joint name
     std::string                 name;
     // parent joint
     BVHJoint *                  parent;
     // children joints
-    std::vector< BVHJoint * >   children;
+    std::vector<BVHJoint *>     children;
     // how data applied
     std::vector<ChannelEnum>    channels;
     // channel index offset
     unsigned int                channel_index_offset;
     // render size
-    BVH::RenderType render_type;
-    BVH::RenderType site_render_type;
+    BVH::RenderType             render_type;
+    BVH::RenderType             site_render_type;
 };
 
 struct BVHJointDisplayInfo
 {
     double offset[3];
+    double weight;
     std::vector<ChannelEnum> channels;
     std::string name;
     unsigned int channel_index_offset;
